@@ -1,7 +1,6 @@
 {
 	"name": "hwguyguy/rise",
 	"description": "PHP Rise Framework",
-	"version": "0.1.0",
 	"type": "library",
 	"license": "proprietary",
 	"authors": [
