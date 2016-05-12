@@ -11,6 +11,7 @@
 		}
 	],
 	"require": {
+		"php": ">=7.0.0",
 		"baryshev/tree-route": "2.0.0",
 		"doctrine/dbal": "2.5.4"
 	},
