@@ -39,12 +39,15 @@ class Initializer extends BaseService {
 	public function run() {
 		$this->readConfigurations();
 		$this->registerServices();
+
 		service('database')->readConfigurations();
 		service('session')->initialize();
-		service('locale')->initialize();
+		service('locale')->readConfigurations();
 		service('router')->readConfigurations();
-		service('router')->buildRoutes();
 		service('dispatcher')->readConfigurations();
+
+		service('locale')->parseRequestLocale();
+		service('router')->buildRoutes();
 		service('dispatcher')->dispatch();
 	}
 }

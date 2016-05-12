@@ -2,16 +2,6 @@
 namespace Rise\Services;
 
 class Locale extends BaseService {
-	const SOURCE_FILE = 1;
-	const SOURCE_DATABASE = 2;
-
-	/**
-	 * Indicate where the locale configurations come from.
-	 *
-	 * @var int
-	 */
-	protected $source = 2;
-
 	/**
 	 *
 	 *
@@ -82,31 +72,17 @@ class Locale extends BaseService {
 	}
 
 	/**
-	 * Initialize locale service.
-	 *
-	 * Read configurations and set current locale.
-	 *
-	 * @return self
-	 */
-	public function initialize() {
-		$this->readConfigurations()
-			->parseRequestLocale();
-		return $this;
-	}
-
-	/**
-	 * Read configurations from source.
+	 * Read configurations.
 	 *
 	 * @return self
 	 */
 	public function readConfigurations() {
-		switch ($this->source) {
-		case static::SOURCE_FILE:
-			$this->readConfigurationsFromFile();
-			break;
-		case static::SOURCE_DATABASE:
-			$this->readConfigurationsFromDatabase();
-			break;
+		$file = service('path')->getConfigurationsPath() . '/locale.php';
+		if (file_exists($file)) {
+			$configurations = require($file);
+			if (isset($configurations['locales'])) {
+				$this->locales = $configurations['locales'];
+			}
 		}
 		return $this;
 	}
@@ -130,6 +106,7 @@ class Locale extends BaseService {
 
 	/**
 	 * Translate an identifier to specific value.
+	 * @TODO not complete
 	 *
 	 * @param string $key
 	 * @param string $localeCode Optional. Specify the locale of translation result.
@@ -137,32 +114,5 @@ class Locale extends BaseService {
 	 */
 	public function translate($key = '', $localeCode = null) {
 		$keys = explode('.', $key);
-	}
-
-	/**
-	 * @TODO
-	 *
-	 * @return self
-	 */
-	protected function readConfigurationsFromFile() {
-		return $this;
-	}
-
-	/**
-	 * @return self
-	 */
-	protected function readConfigurationsFromDatabase() {
-		$statement = service('database')->getQueryBuilder()
-			->select('*')
-			->from('locale')
-			->execute();
-		$locales = [];
-		while ($record = $statement->fetch()) {
-			if ($record['enabled']) {
-				$locales[$record['code']] = $record;
-			}
-		}
-		$this->locales = $locales;
-		return $this;
 	}
 }
