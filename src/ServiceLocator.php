@@ -59,6 +59,7 @@ final class ServiceLocator {
 					if (class_exists($class)) {
 						break;
 					}
+					$class = null;
 				} while ($namespace = prev($this->namespaces));
 
 				if ($class === null) {
