@@ -90,7 +90,7 @@ class Command extends BaseService {
 			return $this->warn();
 		}
 
-		$component = $this->getComponentInstance($class);
+		$component = $this->createComponentInstance($class);
 		if ($component === null) {
 			return $this->warn();
 		}
@@ -152,7 +152,7 @@ class Command extends BaseService {
 	 * @param string $partClassName
 	 * @return \Rise\Components\Command\BaseCommand|null
 	 */
-	protected function getComponentInstance($partClassName) {
+	protected function createComponentInstance($partClassName) {
 		$namespace = end($this->namespaces);
 		do {
 			$class = $namespace . '\\' . $partClassName;

@@ -51,22 +51,11 @@ final class ServiceLocator {
 	public function getService($name = '') {
 		if (isset($this->services[$name])) {
 			if (is_string($this->services[$name])) {
-				$class = null;
-				$service = $this->services[$name];
-				$namespace = end($this->namespaces);
-				do {
-					$class = $namespace . '\\' . $service;
-					if (class_exists($class)) {
-						break;
-					}
-					$class = null;
-				} while ($namespace = prev($this->namespaces));
-
-				if ($class === null) {
+				$service = $this->createServiceInstance($name);
+				if ($service === null) {
 					return null;
 				}
-
-				$this->services[$name] = new $class;
+				$this->services[$name] = $this->createServiceInstance($name);
 			}
 			return $this->services[$name];
 		}
@@ -123,5 +112,32 @@ final class ServiceLocator {
 			$this->namespaces[] = $namespace;
 		}
 		return $this;
+	}
+
+	/**
+	 * Create an instance of service.
+	 *
+	 * @param string $name Service name.
+	 * @return \Rise\Services\BaseService|null
+	 */
+	protected function createServiceInstance($name = '') {
+		$service = $this->services[$name];
+		if (!is_string($service)) {
+			return null;
+		}
+		$namespace = end($this->namespaces);
+		do {
+			$class = $namespace . '\\' . $service;
+			if (class_exists($class)) {
+				break;
+			}
+			$class = null;
+		} while ($namespace = prev($this->namespaces));
+
+		if ($class === null) {
+			return null;
+		}
+
+		return new $class;
 	}
 }
