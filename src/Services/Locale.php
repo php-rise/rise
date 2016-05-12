@@ -22,6 +22,18 @@ class Locale extends BaseService {
 	protected $currentLocaleCode = '';
 
 	/**
+	 * Format: [
+	 *     '<locale code>' => [
+	 *         '<key1>' => '<value1>',
+	 *         '<key2>' => [
+	 *             '<nested key>' => '<value2>',
+	 *             ...
+	 *         ],
+	 *         ...
+	 *     ],
+	 *     ...
+	 * ]
+	 *
 	 * @var array
 	 */
 	protected $translations = [
@@ -83,6 +95,9 @@ class Locale extends BaseService {
 			if (isset($configurations['locales'])) {
 				$this->locales = $configurations['locales'];
 			}
+			if (isset($configurations['translations'])) {
+				$this->translations = $configurations['translations'];
+			}
 		}
 		return $this;
 	}
@@ -106,13 +121,40 @@ class Locale extends BaseService {
 
 	/**
 	 * Translate an identifier to specific value.
-	 * @TODO not complete
 	 *
-	 * @param string $key
+	 * @param string $key Translation identifier separate by ".".
+	 * @param string $defaultValue Optional.
 	 * @param string $localeCode Optional. Specify the locale of translation result.
 	 * @return string
 	 */
-	public function translate($key = '', $localeCode = null) {
+	public function translate($key = '', $defaultValue = '', $localeCode = null) {
+		if ($localeCode === null) {
+			$localeCode = $this->getCurrentLocaleCode();
+		}
+
+		if (!$localeCode) {
+			return $defaultValue;
+		}
+
+		if (!isset($this->translations[$localeCode])) {
+			return $defaultValue;
+		}
+
+		$translationReference = &$this->translations[$localeCode];
 		$keys = explode('.', $key);
+		foreach ($keys as $_key) {
+			if (!is_array($translationReference)
+				|| !isset($translationReference[$_key])
+			) {
+				return $defaultValue;
+			}
+			$translationReference = &$translationReference[$_key];
+		}
+
+		if (is_string($translationReference)) {
+			return $translationReference;
+		}
+
+		return $defaultValue;
 	}
 }
