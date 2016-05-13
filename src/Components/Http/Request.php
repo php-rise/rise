@@ -160,6 +160,16 @@ class Request {
 	}
 
 	/**
+	 * Get uploaded file.
+	 *
+	 * @param string $key
+	 * @return \Rise\Components\Http\Request\Upload\File|\Rise\Components\Http\Request\Upload\File[]|null
+	 */
+	public function getFile($key) {
+		return service('http/upload')->getFile($key);
+	}
+
+	/**
 	 * @param string $key
 	 * @param mixed $defaultValue
 	 * @return mixed
@@ -173,18 +183,11 @@ class Request {
 			$result = $this->getQuery($key);
 		}
 		if ($result === null) {
+			$result = $this->getFile($key);
+		}
+		if ($result === null) {
 			$result = $defaultValue;
 		}
 		return $result;
-	}
-
-	/**
-	 * Get upload file tmp name.
-	 *
-	 * @param string $key
-	 * @return \Rise\Components\Http\Request\File
-	 */
-	public function getFile($key) {
-		return (new File)->setKey($key);
 	}
 }

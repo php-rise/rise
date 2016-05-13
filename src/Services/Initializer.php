@@ -28,6 +28,7 @@ class Initializer extends BaseService {
 	public function registerServices() {
 		service()
 			->setService('http', new Http)
+			->setService('http/upload', 'Http\Upload')
 			->setService('database', new Database)
 			->setService('locale', new Locale)
 			->setService('session', new Session)
