@@ -55,7 +55,7 @@ final class ServiceLocator {
 				if ($service === null) {
 					return null;
 				}
-				$this->services[$name] = $this->createServiceInstance($name);
+				$this->services[$name] = $service;
 			}
 			return $this->services[$name];
 		}
@@ -102,7 +102,7 @@ final class ServiceLocator {
 	}
 
 	/**
-	 * Add namespace for the trial of creating instance of lazy loading service.
+	 * Add namespace for the trial when creating instance of lazy loading service.
 	 *
 	 * @param string $namespace
 	 * @return self
