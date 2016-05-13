@@ -19,7 +19,7 @@ class Database extends BaseService {
 	/**
 	 * @var array
 	 */
-	protected $configurations;
+	protected $configurations = [];
 
 	/**
 	 * @var \Doctrine\DBAL\Connection[]
@@ -48,7 +48,10 @@ class Database extends BaseService {
 	 * @return self
 	 */
 	public function readConfigurations() {
-		$this->setConfigurations(require(service('path')->getConfigurationsPath() . '/database.php'));
+		$configurationFile = service('path')->getConfigurationsPath() . '/database.php';
+		if (file_exists($configurationFile)) {
+			$this->setConfigurations(require($configurationFile));
+		}
 		return $this;
 	}
 
