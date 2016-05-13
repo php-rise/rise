@@ -60,7 +60,8 @@ class Command extends BaseService {
 	 * @return self
 	 */
 	public function run() {
-		service('initializer')->registerServices();
+		service('initializer')->readConfigurations()
+			->registerServices();
 		$this->readConfigurations();
 		service('database')->readConfigurations();
 		$this->execute($this->arguments);

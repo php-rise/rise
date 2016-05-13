@@ -22,21 +22,33 @@ class Initializer extends BaseService {
 				service()->addNamespace($namespace);
 			}
 		}
+		if (isset($configurations['services'])) {
+			foreach ($configurations['services'] as $serviceName => $service) {
+				service()->setService($serviceName, $service);
+			}
+		}
 		return $this;
 	}
 
+	/**
+	 * @return self
+	 */
 	public function registerServices() {
 		service()
-			->setService('http', new Http)
-			->setService('http/upload', 'Http\Upload')
-			->setService('database', new Database)
-			->setService('locale', new Locale)
-			->setService('session', new Session)
-			->setService('router', new Router)
-			->setService('dispatcher', new Dispatcher)
-			->setService('template', new Template);
+			->setServiceOnEmpty('http', new Http)
+			->setServiceOnEmpty('http/upload', 'Http\Upload')
+			->setServiceOnEmpty('database', new Database)
+			->setServiceOnEmpty('locale', new Locale)
+			->setServiceOnEmpty('session', new Session)
+			->setServiceOnEmpty('router', new Router)
+			->setServiceOnEmpty('dispatcher', new Dispatcher)
+			->setServiceOnEmpty('template', new Template);
+		return $this;
 	}
 
+	/**
+	 * @return self
+	 */
 	public function run() {
 		$this->readConfigurations();
 		$this->registerServices();
@@ -50,5 +62,7 @@ class Initializer extends BaseService {
 		service('locale')->parseRequestLocale();
 		service('router')->buildRoutes();
 		service('dispatcher')->dispatch();
+
+		return $this;
 	}
 }

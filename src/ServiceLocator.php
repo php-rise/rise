@@ -79,6 +79,20 @@ final class ServiceLocator {
 	}
 
 	/**
+	 * Register a service only when the service name has not been registered.
+	 *
+	 * @param string $name Service name.
+	 * @param \Rise\Services\BaseService|string $service An instance of service or the class name of service. Passing string will result in lazy loading the service.
+	 * @return self
+	 */
+	public function setServiceOnEmpty($name, $service) {
+		if (isset($this->services[$name])) {
+			return $this;
+		}
+		return $this->setService($name, $service);
+	}
+
+	/**
 	 * Remove a service.
 	 *
 	 * @param string $name Service name.
