@@ -11,6 +11,7 @@ class Command extends BaseService {
 	 * @var array
 	 */
 	protected $rules = [
+		'help' => 'Help.show',
 		'database' => [
 			'initialize' => 'Database\Initializer.initialize',
 			'migration' => [

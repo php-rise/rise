@@ -8,6 +8,7 @@ use Rise\Components\Command\BaseCommand;
 class Migrator extends BaseCommand {
 	public function create() {
 		if (!isset($this->arguments[0])) {
+			echo "Usage: bin/rise database migration create FILENAME\n";
 			return;
 		}
 
