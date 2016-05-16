@@ -22,6 +22,11 @@ class Locale extends BaseService {
 	protected $currentLocaleCode = '';
 
 	/**
+	 * @var string
+	 */
+	protected $defaultLocaleCode = '';
+
+	/**
 	 * Format: [
 	 *     '<locale code>' => [
 	 *         '<key1>' => '<value1>',
@@ -64,7 +69,25 @@ class Locale extends BaseService {
 	 * @return string
 	 */
 	public function getCurrentLocaleCode() {
-		return $this->currentLocaleCode;
+		if ($this->currentLocaleCode) {
+			return $this->currentLocaleCode;
+		}
+		return $this->getDefaultLocaleCode();
+	}
+
+	/**
+	 * @return string
+	 */
+	public function getDefaultLocaleCode() {
+		return $this->defaultLocaleCode;
+	}
+
+	/**
+	 * @return self
+	 */
+	public function setDefaultLocaleCode($defaultLocaleCode) {
+		$this->defaultLocaleCode = $defaultLocaleCode;
+		return $this;
 	}
 
 	/**
@@ -94,6 +117,9 @@ class Locale extends BaseService {
 			$configurations = require($file);
 			if (isset($configurations['locales'])) {
 				$this->locales = $configurations['locales'];
+			}
+			if (isset($configurations['defaultLocaleCode'])) {
+				$this->defaultLocaleCode = $configurations['defaultLocaleCode'];
 			}
 			if (isset($configurations['translations'])) {
 				$this->translations = $configurations['translations'];
