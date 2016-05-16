@@ -175,7 +175,7 @@ class RoutingEngine extends BaseRoutingEngine {
 			}
 			$path .= '/';
 		}
-		if (!$trailingSlash) {
+		if (!$trailingSlash && $path !== '/') {
 			$path = rtrim($path, '/');
 		}
 		return $path;

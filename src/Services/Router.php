@@ -131,8 +131,7 @@ class Router extends BaseService {
 		}
 
 		if ($localeCode) {
-			return '/' . $localeCode . '/'
-				. $this->engine->generatePath($name, $params);
+			return '/' . $localeCode . $this->engine->generatePath($name, $params);
 		}
 
 		return $this->engine->generatePath($name, $params);
