@@ -25,7 +25,7 @@ class Scope {
 	/**
 	 * @var string[]
 	 */
-	protected $previousHandlers = [];
+	protected $beforeHandlers = [];
 
 	/**
 	 * @var string|null
@@ -40,7 +40,7 @@ class Scope {
 	/**
 	 * @var string[]|null
 	 */
-	protected $generatedPreviousHandlers = null;
+	protected $generatedBeforeHandlers = null;
 
 	/**
 	 * @return \Rise\Components\Router\Scope
@@ -109,16 +109,16 @@ class Scope {
 	/**
 	 * @return string[]
 	 */
-	public function getPreviousHandlers() {
-		return $this->previousHandlers;
+	public function getBeforeHandlers() {
+		return $this->beforeHandlers;
 	}
 
 	/**
-	 * @param string[]|string $previousHandlers
+	 * @param string[]|string $beforeHandlers
 	 * @return self
 	 */
-	public function setPreviousHandlers($previousHandlers) {
-		$this->previousHandlers = (array)$previousHandlers;
+	public function setBeforeHandlers($beforeHandlers) {
+		$this->beforeHandlers = (array)$beforeHandlers;
 		return $this;
 	}
 
@@ -168,18 +168,18 @@ class Scope {
 	/**
 	 * @return string[]
 	 */
-	public function getGeneratedPreviousHandlers() {
-		if ($this->generatedPreviousHandlers !== null) {
-			return $this->generatedPreviousHandlers;
+	public function getGeneratedBeforeHandlers() {
+		if ($this->generatedBeforeHandlers !== null) {
+			return $this->generatedBeforeHandlers;
 		}
-		$generatedPreviousHandlers = [];
+		$generatedBeforeHandlers = [];
 		$scope = $this;
 		do {
-			$generatedPreviousHandlers = array_merge($scope->getPreviousHandlers(), $generatedPreviousHandlers);
+			$generatedBeforeHandlers = array_merge($scope->getBeforeHandlers(), $generatedBeforeHandlers);
 			$scope = $scope->getParentScope();
 		} while ($scope !== null);
-		$this->generatedPreviousHandlers = $generatedPreviousHandlers;
-		return $generatedPreviousHandlers;
+		$this->generatedBeforeHandlers = $generatedBeforeHandlers;
+		return $generatedBeforeHandlers;
 	}
 
 	/**
@@ -211,9 +211,9 @@ class Scope {
 			}
 		}
 
-		$previousHandlers = $this->getGeneratedPreviousHandlers();
-		if (!empty($previousHandlers)) {
-			$handlers = array_merge($previousHandlers, $handlers);
+		$beforeHandlers = $this->getGeneratedBeforeHandlers();
+		if (!empty($beforeHandlers)) {
+			$handlers = array_merge($beforeHandlers, $handlers);
 		}
 
 		$this->engine->addRoute($methods, $path, $handlers, $name);
