@@ -1,10 +1,4 @@
 <?php
-/**
- * Copyright (c) Jack Wan <hwguyguy@gmail.com> - All Rights Reserved
- * Unauthorized copying of this file, via any medium is strictly prohibited
- * Proprietary and confidential
- * Written by Jack Wan <hwguyguy@gmail.com>, August 2015
- */
 namespace Rise\Components\Template\Blocks;
 
 /**
