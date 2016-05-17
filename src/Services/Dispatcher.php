@@ -36,7 +36,8 @@ class Dispatcher extends BaseService {
 			service('session')->toggleCurrentFlashBagKey();
 			$this->getHandlerResult($router->getMatchedHandler());
 			service('http')->getResponse()->send();
-			service('session')->clearFlash();
+			service('session')->clearFlash()
+				->rememberCsrfToken();
 		} else {
 			service('http')->getResponse()
 				->setStatusCode($router->getMatchedStatus())

@@ -17,6 +17,12 @@ class Session extends BaseService {
 
 	protected $saveHandler = 1;
 
+	protected $csrfToken = '';
+
+	protected $csrfTokenSessionKey = 'csrfToken';
+
+	protected $csrfTokenFormKey = '_csrf_token';
+
 	/**
 	* @return self
 	*/
@@ -293,5 +299,69 @@ class Session extends BaseService {
 	 */
 	public function keepFlash($key) {
 		return $this->setFlash($key, $this->getFlash($key));
+	}
+
+	/**
+	 * Generate CSRF token.
+	 *
+	 * @return string
+	 */
+	public function generateCsrfToken() {
+		return hash("sha512", mt_rand(0, mt_getrandmax()));
+	}
+
+	/**
+	 * Get CSRF token.
+	 *
+	 * @return string
+	 */
+	public function getCsrfToken() {
+		if (!$this->csrfToken) {
+			$this->csrfToken = $this->generateCsrfToken();
+		}
+		return $this->csrfToken;
+	}
+
+	/**
+	 * Get CSRF token form key.
+	 *
+	 * @return string
+	 */
+	public function getCsrfTokenFormKey() {
+		return $this->csrfTokenFormKey;
+	}
+
+	/**
+	 * Store the token in the session.
+	 *
+	 * @return self
+	 */
+	public function rememberCsrfToken() {
+		if ($this->csrfToken) {
+			$this->set($this->csrfTokenSessionKey, $this->csrfToken);
+		} else {
+			$this->unset($this->csrfTokenSessionKey);
+		}
+		return $this;
+	}
+
+	/**
+	 * Validate with the token stored in session.
+	 *
+	 * @param string $token
+	 * @return bool
+	 */
+	public function validateCsrfToken($token = '') {
+		$csrfToken = $this->get($this->csrfTokenSessionKey);
+		return ($csrfToken && $csrfToken === $token);
+	}
+
+	/**
+	 * Generate HTML.
+	 *
+	 * @return string
+	 */
+	public function generateCsrfHtml() {
+		return '<input type="hidden" name="' . $this->csrfTokenFormKey . '" value="' . $this->getCsrfToken() . '"/>';
 	}
 }
