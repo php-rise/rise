@@ -113,7 +113,7 @@ class Command extends BaseService {
 				$this->namespaces = array_merge($this->namespaces, (array)$configurations['namespaces']);
 			}
 			if (isset($configurations['rules'])) {
-				$this->rules = $configurations['rules'] + $this->rules;
+				$this->rules = array_replace_recursive($this->rules, $configurations['rules']);
 			}
 		}
 		return $this;
