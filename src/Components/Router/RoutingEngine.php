@@ -21,7 +21,7 @@ class RoutingEngine extends BaseRoutingEngine {
 	protected $namedRoutes = [];
 
 	/**
-	 * Copy from original class.
+	 * Same as the original class.
 	 *
 	 * {@inheritdoc}
 	 */
@@ -44,7 +44,7 @@ class RoutingEngine extends BaseRoutingEngine {
 	}
 
 	/**
-	 * Copy from original class and add support for named route.
+	 * Same as the original class and add support for named route.
 	 *
 	 * @param string|array $methods
 	 * @param string $route
@@ -182,7 +182,7 @@ class RoutingEngine extends BaseRoutingEngine {
 	}
 
 	/**
-	 * Copy from original class.
+	 * Same as the original class.
 	 *
 	 * {@inheritdoc}
 	 */
@@ -228,7 +228,7 @@ class RoutingEngine extends BaseRoutingEngine {
 	}
 
 	/**
-	 * Copy from original class.
+	 * Same as the original class.
 	 *
 	 * {@inheritdoc}
 	 */
@@ -241,7 +241,7 @@ class RoutingEngine extends BaseRoutingEngine {
 	}
 
 	/**
-	 * Copy from original class.
+	 * Same as the original class.
 	 *
 	 * {@inheritdoc}
 	 */
@@ -283,7 +283,7 @@ class RoutingEngine extends BaseRoutingEngine {
 	}
 
 	/**
-	 * Copy from original class.
+	 * Same as the original class.
 	 *
 	 * {@inheritdoc}
 	 */
@@ -292,7 +292,7 @@ class RoutingEngine extends BaseRoutingEngine {
 	}
 
 	/**
-	 * Copy from original class. Add return value for method chaining.
+	 * Same as the original class. Add return value for method chaining.
 	 *
 	 * @return self
 	 */
