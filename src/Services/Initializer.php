@@ -54,7 +54,7 @@ class Initializer extends BaseService {
 		$this->registerServices();
 
 		service('database')->readConfigurations();
-		service('session')->initialize();
+		service('session')->readConfigurations();
 		service('locale')->readConfigurations();
 		service('router')->readConfigurations();
 		service('dispatcher')->readConfigurations();

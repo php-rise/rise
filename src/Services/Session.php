@@ -2,25 +2,52 @@
 namespace Rise\Services;
 
 class Session extends BaseService {
-	const SESSION_NAME = 'reach_session';
-
 	const SAVE_HANDLER_FILE = 1;
 	const SAVE_HANDLER_REDIS = 2;
 
+	/**
+	 * @var string
+	 */
+	protected $sessionName = 'rise_session';
+
+	/**
+	 * @var bool
+	 */
 	protected $started = false;
 
+	/**
+	 * @var int
+	 */
 	protected $saveHandler = 1;
 
+	/**
+	 * @var string
+	 */
 	protected $csrfToken = '';
 
+	/**
+	 * @var string
+	 */
 	protected $csrfTokenSessionKey = 'csrfToken';
 
+	/**
+	 * @var string
+	 */
 	protected $csrfTokenFormKey = '_csrf_token';
 
 	/**
-	* @return self
-	*/
-	public function initialize() {
+	 * Read configuration file.
+	 *
+	 * @return self
+	 */
+	public function readConfigurations() {
+		$file = service('path')->getConfigurationsPath() . '/session.php';
+		if (file_exists($file)) {
+			$configurations = require($file);
+			if (isset($configurations['sessionName'])) {
+				$this->sessionName = $configurations['sessionName'];
+			}
+		}
 		return $this;
 	}
 
@@ -40,7 +67,7 @@ class Session extends BaseService {
 			ini_set('session.save_path', 'tcp://127.0.0.1:6379');
 			break;
 		}
-		session_name(static::SESSION_NAME);
+		session_name($this->sessionName);
 		session_start();
 		$this->started = true;
 		return $this;
