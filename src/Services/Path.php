@@ -64,7 +64,7 @@ class Path extends BaseService {
 	 */
 	public function setProjectRootPath($projectRootPath) {
 		$this->projectRootPath = realpath($projectRootPath);
-		$this->configurationsPath = $this->projectRootPath . '/configurations';
+		$this->configurationsPath = $this->projectRootPath . '/config';
 
 		$this->publicPath = $this->projectRootPath . '/public';
 		$this->logsPath = $this->projectRootPath . '/logs';
