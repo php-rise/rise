@@ -83,16 +83,10 @@ class Responder extends BaseService {
 			->setStatusCode($statusCode)
 			->setHeader('Location', $url)
 			->setBody(sprintf('<!DOCTYPE html>
-<html>
-	<head>
-		<meta charset="UTF-8" />
-		<meta http-equiv="refresh" content="1;url=%1$s" />
-		<title>Redirecting to %1$s</title>
-	</head>
-	<body>
-		Redirecting to <a href="%1$s">%1$s</a>.
-	</body>
-</html>', htmlspecialchars($url, ENT_QUOTES, 'UTF-8')));
+<meta charset="UTF-8">
+<meta http-equiv="refresh" content="1;url=%1$s">
+<title>Redirecting to %1$s</title>
+Redirecting to <a href="%1$s">%1$s</a>.', htmlspecialchars($url, ENT_QUOTES, 'UTF-8')));
 
 		return $this;
 	}
