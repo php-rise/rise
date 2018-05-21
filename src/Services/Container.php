@@ -38,9 +38,9 @@ class Container extends BaseService {
 		$this->bindSingleton('Rise\Services\Dispatcher');
 		$this->bindSingleton('Rise\Services\Template');
 
+		$this->bindFactory('Rise\Factories\Container\DynamicFactory');
 		$this->bindFactory('Rise\Factories\Http\RequestFactory');
 		$this->bindFactory('Rise\Factories\Http\ResponseFactory');
-		$this->bindFactory('Rise\Factories\Dispatcher\HandlerFactory');
 		$this->bindFactory('Rise\Factories\Template\Blocks\BlockFactory');
 		$this->bindFactory('Rise\Factories\Template\Blocks\LayoutFactory');
 		$this->bindFactory('Rise\Factories\Template\Blocks\LayoutableBlockFactory');
