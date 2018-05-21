@@ -1,6 +1,8 @@
 <?php
 namespace Rise\Services;
 
+use Rise\Services\Http\Receiver;
+
 class Locale extends BaseService {
 	/**
 	 *
@@ -45,6 +47,21 @@ class Locale extends BaseService {
 		'en' => [
 		],
 	];
+
+	/**
+	 * @var \Rise\Services\Path
+	 */
+	protected $path;
+
+	/**
+	 * @var \Rise\Services\Http\Receiver
+	 */
+	protected $receiver;
+
+	public function __construct(Path $path, Receiver $receiver) {
+		$this->path = $path;
+		$this->receiver = $receiver;
+	}
 
 	/**
 	 *
@@ -112,7 +129,7 @@ class Locale extends BaseService {
 	 * @return self
 	 */
 	public function readConfigurations() {
-		$file = service('path')->getConfigurationsPath() . '/locale.php';
+		$file = $this->path->getConfigurationsPath() . '/locale.php';
 		if (file_exists($file)) {
 			$configurations = require($file);
 			if (isset($configurations['locales'])) {
@@ -134,7 +151,7 @@ class Locale extends BaseService {
 	 * @return self
 	 */
 	public function parseRequestLocale() {
-		$request = service('http')->getRequest();
+		$request = $this->receiver->getRequest();
 		list(, $localeCode, $requestPath) = array_pad(explode('/', $request->getRequestUri(), 3), 3, null);
 		if (isset($this->locales[$localeCode])) {
 			$this->currentLocaleCode = $localeCode;

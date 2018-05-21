@@ -1,11 +1,53 @@
 <?php
 namespace Rise\Services;
 
+use Rise\Services\Http\Responder;
+use Rise\Factories\Container\DynamicFactory;
+
 class Dispatcher extends BaseService {
 	/**
 	 * @var string
 	 */
 	protected $handlerNamespace = '';
+
+	/**
+	 * @var \Rise\Services\Path
+	 */
+	protected $path;
+
+	/**
+	 * @var \Rise\Services\Router
+	 */
+	protected $router;
+
+	/**
+	 * @var \Rise\Services\Http\Responder
+	 */
+	protected $responder;
+
+	/**
+	 * @var \Rise\Services\Session
+	 */
+	protected $session;
+
+	/**
+	 * @var \Rise\Factories\Container\DynamicFactory
+	 */
+	protected $dynamicFactory;
+
+	public function __construct(
+		Path $path,
+		Router $router,
+		Responder $responder,
+		Session $session,
+		DynamicFactory $dynamicFactory
+	) {
+		$this->path = $path;
+		$this->router = $router;
+		$this->responder = $responder;
+		$this->session = $session;
+		$this->dynamicFactory = $dynamicFactory;
+	}
 
 	/**
 	 * @param string $handlerNamespace
@@ -20,7 +62,7 @@ class Dispatcher extends BaseService {
 	 * @return self
 	 */
 	public function readConfigurations() {
-		$configurations = require(service('path')->getConfigurationsPath() . '/dispatcher.php');
+		$configurations = require($this->path->getConfigurationsPath() . '/dispatcher.php');
 		$this->setHandlerNamespace($configurations['handlerNamespace']);
 		return $this;
 	}
@@ -31,16 +73,15 @@ class Dispatcher extends BaseService {
 	 * @return self
 	 */
 	public function dispatch() {
-		$router = service('router');
-		if ($router->match()) {
-			service('session')->toggleCurrentFlashBagKey();
-			$this->getHandlerResult($router->getMatchedHandler());
-			service('http')->getResponse()->send();
-			service('session')->clearFlash()
+		if ($this->router->match()) {
+			$this->session->toggleCurrentFlashBagKey();
+			$this->getHandlerResult($this->router->getMatchedHandler());
+			$this->responder->getResponse()->send();
+			$this->session->clearFlash()
 				->rememberCsrfToken();
 		} else {
-			service('http')->getResponse()
-				->setStatusCode($router->getMatchedStatus())
+			$this->responder->getResponse()
+				->setStatusCode($this->router->getMatchedStatus())
 				->send();
 		}
 		return $this;
@@ -54,7 +95,7 @@ class Dispatcher extends BaseService {
 		if (is_string($handler)) {
 			list($class, $method) = explode('.', $handler, 2);
 			$class = $this->handlerNamespace . '\\' . $class;
-			$instance = new $class();
+			$instance = $this->dynamicFactory->create($class);
 			if ($instance->{$method}() === false) {
 				return false;
 			}

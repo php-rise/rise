@@ -36,12 +36,21 @@ class Session extends BaseService {
 	protected $csrfTokenFormKey = '_csrf_token';
 
 	/**
+	 * @var \Rise\Services\Path
+	 */
+	protected $path;
+
+	public function __construct(Path $path) {
+		$this->path = $path;
+	}
+
+	/**
 	 * Read configuration file.
 	 *
 	 * @return self
 	 */
 	public function readConfigurations() {
-		$file = service('path')->getConfigurationsPath() . '/session.php';
+		$file = $this->path->getConfigurationsPath() . '/session.php';
 		if (file_exists($file)) {
 			$configurations = require($file);
 			if (isset($configurations['sessionName'])) {
@@ -60,7 +69,7 @@ class Session extends BaseService {
 		}
 		switch ($this->saveHandler) {
 		case static::SAVE_HANDLER_FILE:
-			session_save_path(service('path')->getSessionsPath());
+			session_save_path($this->path->getSessionsPath());
 			break;
 		case static::SAVE_HANDLER_REDIS:
 			ini_set('session.save_handler', 'redis');

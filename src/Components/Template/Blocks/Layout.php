@@ -60,8 +60,8 @@ class Layout extends Block {
 	public function block($name = null, $template = '', $data = []) {
 		if ($name && isset($this->overridenNamedBlocks[$name])) {
 			$namedBlock = $this->overridenNamedBlocks[$name];
-			return service('template')->renderBlock($namedBlock['template'], $namedBlock['data']);
+			return $this->templateService->renderBlock($namedBlock['template'], $namedBlock['data']);
 		}
-		return service('template')->renderBlock($template, $data);
+		return $this->templateService->renderBlock($template, $data);
 	}
 }

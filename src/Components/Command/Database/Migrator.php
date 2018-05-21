@@ -2,10 +2,26 @@
 namespace Rise\Components\Command\Database;
 
 use DateTime;
-
+use Rise\Services\Path;
+use Rise\Services\Database;
 use Rise\Components\Command\BaseCommand;
 
 class Migrator extends BaseCommand {
+	/**
+	 * @var Rise\Services\Path
+	 */
+	private $path;
+
+	/**
+	 * @var Rise\Services\Database
+	 */
+	private $database;
+
+	public function __construct(Path $path, Database $database) {
+		$this->path = $path;
+		$this->database = $database;
+	}
+
 	public function create() {
 		if (!isset($this->arguments[0])) {
 			echo "Usage: bin/rise database migration create FILENAME\n";
@@ -26,7 +42,7 @@ class $className {
 	}
 }
 EOD;
-		if (file_put_contents(service('path')->getMigrationsPath() . '/' . $filename, $content) === false) {
+		if (file_put_contents($this->path->getMigrationsPath() . '/' . $filename, $content) === false) {
 			echo "Failed to create migration file.\n";
 		} else {
 			echo "Created migration file \"$filename\"\n";
@@ -34,7 +50,7 @@ EOD;
 	}
 
 	public function migrate() {
-		$lastMigration = service('database')->getQueryBuilder()
+		$lastMigration = $this->database->getQueryBuilder()
 			->select('filename')
 			->from('migration')
 			->orderBy('filename', 'DESC')
@@ -42,7 +58,7 @@ EOD;
 			->execute()
 			->fetch();
 
-		$migrationsPath = service('path')->getMigrationsPath();
+		$migrationsPath = $this->path->getMigrationsPath();
 		$migrationFiles = scandir($migrationsPath);
 		$migrationFiles = array_values(array_diff($migrationFiles, ['.', '..', '.keep']));
 		// array_splice($migrationFiles, 0, 2); // Remove "." and ".." directories
@@ -65,7 +81,7 @@ EOD;
 				$instance = new $className;
 				$instance->up();
 
-				service('database')->getQueryBuilder()
+				$this->database->getQueryBuilder()
 					->insert('migration')
 					->values([
 						'filename' => ':filename',
@@ -79,7 +95,7 @@ EOD;
 	}
 
 	public function rollback() {
-		$lastMigration = service('database')->getQueryBuilder()
+		$lastMigration = $this->database->getQueryBuilder()
 			->select('filename')
 			->from('migration')
 			->orderBy('filename', 'DESC')
@@ -94,11 +110,11 @@ EOD;
 			$className = substr($filename, strpos($filename, '-') + 1);
 			$className = substr($className, 0, strpos($className, '.'));
 			$className = ucfirst($className);
-			require service('path')->getMigrationsPath() . '/' . $filename;
+			require $this->path->getMigrationsPath() . '/' . $filename;
 			$instance = new $className;
 			$instance->down();
 
-			$affected = service('database')->getQueryBuilder()
+			$affected = $this->database->getQueryBuilder()
 				->delete('migration')
 				->where('filename = :filename')
 				->setParameter('filename', $filename)

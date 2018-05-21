@@ -1,6 +1,8 @@
 <?php
 namespace Rise\Services;
 
+use Rise\Factories\Container\DynamicFactory;
+
 class Command extends BaseService {
 	/**
 	 * @var string[]
@@ -28,12 +30,43 @@ class Command extends BaseService {
 	protected $namespaces = ['\Rise\Components\Command'];
 
 	/**
+	 * @var \Rise\Services\Initializer
+	 */
+	protected $initializer;
+
+	/**
+	 * @var \Rise\Services\Path
+	 */
+	protected $path;
+
+	/**
+	 * @var \Rise\Services\Database
+	 */
+	protected $database;
+
+	/**
+	 * @var \Rise\Factories\Container\DynamicFactory
+	 */
+	protected $dynamicFactory;
+
+	public function __construct(
+		Initializer $initialize,
+		Path $path,
+		Database $database,
+		DynamicFactory $dynamicFactory
+	) {
+		$this->initializer = $initializer;
+		$this->path = $path;
+		$this->database = $database;
+		$this->dynamicFactory = $dynamicFactory;
+	}
+
+	/**
 	 * @param string $projectRootPath
 	 * @return self
 	 */
 	public function setProjectRootPath($projectRootPath) {
-		service()->setService('initializer', new Initializer);
-		service('initializer')->setProjectRootPath($projectRootPath);
+		$this->initializer->setProjectRootPath($projectRootPath);
 		return $this;
 	}
 
@@ -61,10 +94,8 @@ class Command extends BaseService {
 	 * @return self
 	 */
 	public function run() {
-		service('initializer')->readConfigurations()
-			->registerServices();
 		$this->readConfigurations();
-		service('database')->readConfigurations();
+		$this->database->readConfigurations();
 		$this->execute($this->arguments);
 		return $this;
 	}
@@ -106,7 +137,7 @@ class Command extends BaseService {
 	 * @return self
 	 */
 	protected function readConfigurations() {
-		$file = service('path')->getConfigurationsPath() . '/command.php';
+		$file = $this->path->getConfigurationsPath() . '/command.php';
 		if (file_exists($file)) {
 			$configurations = require($file);
 			if (isset($configurations['namespaces'])) {
@@ -168,6 +199,6 @@ class Command extends BaseService {
 			return null;
 		}
 
-		return new $class;
+		return $this->dynamicFactory->create($class);
 	}
 }

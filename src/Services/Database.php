@@ -21,6 +21,15 @@ class Database extends BaseService {
 	protected $connections = [];
 
 	/**
+	 * @var \Rise\Services\Path
+	 */
+	protected $path;
+
+	public function __construct(Path $path) {
+		$this->path = $path;
+	}
+
+	/**
 	 * @return array
 	 */
 	public function getConfigurations() {
@@ -42,7 +51,7 @@ class Database extends BaseService {
 	 * @return self
 	 */
 	public function readConfigurations() {
-		$configurationFile = service('path')->getConfigurationsPath() . '/database.php';
+		$configurationFile = $this->path->getConfigurationsPath() . '/database.php';
 		if (file_exists($configurationFile)) {
 			$this->setConfigurations(require($configurationFile));
 		}

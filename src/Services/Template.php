@@ -1,11 +1,36 @@
 <?php
 namespace Rise\Services;
 
-use Rise\Components\Template\Blocks\Block;
-use Rise\Components\Template\Blocks\Layout;
-use Rise\Components\Template\Blocks\LayoutableBlock;
+use Rise\Factories\Template\Blocks\BlockFactory;
+use Rise\Factories\Template\Blocks\LayoutFactory;
+use Rise\Factories\Template\Blocks\LayoutableBlockFactory;
 
 class Template extends BaseService {
+	/**
+	 * @var Rise\Factories\Template\Blocks\BlockFactory
+	 */
+	private $blockFactory;
+
+	/**
+	 * @var Rise\Factories\Template\Blocks\LayoutFactory
+	 */
+	private $layoutFactory;
+
+	/**
+	 * @var Rise\Factories\Template\Blocks\LayoutableBlockFactory
+	 */
+	private $LayoutableBlockFactory;
+
+	public function __construct(
+		BlockFactory $blockFactory,
+		LayoutFactory $layoutFactory,
+		LayoutableBlockFactory $layoutableBlockFactory
+	) {
+		$this->blockFactory = $blockFactory;
+		$this->layoutFactory = $layoutFactory;
+		$this->layoutableBlockFactory = $layoutableBlockFactory;
+	}
+
 	/**
 	 * Render a block.
 	 *
@@ -14,7 +39,9 @@ class Template extends BaseService {
 	 * @return string
 	 */
 	public function renderBlock($template = '', $data = []) {
-		return (new Block)->setTemplate($template)->setData($data)->getHtml();
+		return $this->blockFactory->create()
+			->setTemplate($template)
+			->setData($data)->getHtml();
 	}
 
 	/**
@@ -25,11 +52,14 @@ class Template extends BaseService {
 	 * @return string
 	 */
 	public function renderPage($template = '', $data = []) {
-		$contentBlock = (new LayoutableBlock)->setTemplate($template)->setData($data);
+		$contentBlock = $this->layoutableBlockFactory->create()
+			->setTemplate($template)
+			->setData($data);
 		$contentHtml = $contentBlock->getHtml();
 
 		if ($contentBlock->getLayoutTemplate()) {
-			return (new Layout)->setTemplate($contentBlock->getLayoutTemplate())
+			return $this->layoutFactory->create()
+				->setTemplate($contentBlock->getLayoutTemplate())
 				->setData($contentBlock->getData())
 				->setContentHtml($contentHtml)
 				->setOverridenNamedBlocks($contentBlock->getOverridenNamedBlocks())

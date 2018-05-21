@@ -1,6 +1,9 @@
 <?php
 namespace Rise\Components\Template\Blocks;
 
+use Rise\Services\Path;
+use Rise\Services\Template;
+
 /**
  * Simple template engine.
  *
@@ -43,6 +46,21 @@ class Block {
 	 * @var string|null
 	 */
 	protected $html = null;
+
+	/**
+	 * @var \Rise\Services\Path
+	 */
+	protected $pathService;
+
+	/**
+	 * @var \Rise\Services\Template
+	 */
+	protected $templateService;
+
+	public function __construct(Path $path, Template $template) {
+		$this->pathService = $path;
+		$this->templateService = $template;
+	}
 
 	/**
 	 * Set template directory.
@@ -106,7 +124,7 @@ class Block {
 			$data = $data + $otherData;
 			extract($data, EXTR_SKIP);
 			ob_start();
-			include service('path')->getTemplatesPath() . '/' . $this->templateDirectory . '/' . $this->template . '.phtml';
+			include $this->pathService->getTemplatesPath() . '/' . $this->templateDirectory . '/' . $this->template . '.phtml';
 			$html = ob_get_clean();
 		} catch (Exception $e) {
 			$html = '';
@@ -136,6 +154,6 @@ class Block {
 	 * @return string
 	 */
 	public function include($template = '', $data = []) {
-		return service('template')->renderBlock($template, $data);
+		return $this->templateService->renderBlock($template, $data);
 	}
 }

@@ -2,27 +2,36 @@
 namespace Rise\Components\Command\Database;
 
 use Doctrine\DBAL\Schema\Table;
-
+use Rise\Services\Database;
 use Rise\Components\Command\BaseCommand;
 
 class Initializer extends BaseCommand {
+	/**
+	 * @var Rise\Services\Database
+	 */
+	private $database;
+
+	public function __construct(Database $database) {
+		$this->database = $database;
+	}
+
 	public function initialize() {
 		$configurations = [];
 		$databases = [];
-		foreach (service('database')->getConfigurations() as $connectionName => $configuration) {
+		foreach ($this->database->getConfigurations() as $connectionName => $configuration) {
 			$databases[$connectionName] = $configuration['dbname'];
 			$configuration['dbname'] = null;
 			$configurations[$connectionName] = $configuration;
 		}
-		service('database')->setConfigurations($configurations);
+		$this->database->setConfigurations($configurations);
 		foreach ($databases as $connectionName => $database) {
-			service('database')->getConnection($connectionName)
+			$this->database->getConnection($connectionName)
 				->getSchemaManager()
 				->createDatabase($database);
 			echo "Created database \"$database\".\n";
 		}
 
-		service('database')->clearConnections()->readConfigurations();
+		$this->database->clearConnections()->readConfigurations();
 
 		$tableName = 'migration';
 		$table = new Table($tableName);
@@ -37,7 +46,7 @@ class Initializer extends BaseCommand {
 			],
 		]);
 		$table->setPrimaryKey(['id']);
-		service('database')->getConnection()
+		$this->database->getConnection()
 			->getSchemaManager()
 			->createTable($table);
 		echo "Created table \"$tableName\".\n";

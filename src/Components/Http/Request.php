@@ -1,6 +1,8 @@
 <?php
 namespace Rise\Components\Http;
 
+use Rise\Services\Http\Upload;
+
 class Request {
 	/**
 	 * Request URI. Same as $_SERVER['REQUEST_URI']
@@ -27,6 +29,15 @@ class Request {
 	 * @var array
 	 */
 	protected $params = [];
+
+	/**
+	 * @var Rise\Services\Http\Upload
+	 */
+	protected $httpUpload;
+
+	public function __construct(Upload $upload) {
+		$this->httpUpload = $upload;
+	}
 
 	/**
 	 * Get request URI.
@@ -166,7 +177,7 @@ class Request {
 	 * @return \Rise\Components\Http\Request\Upload\File|\Rise\Components\Http\Request\Upload\File[]|null
 	 */
 	public function getFile($key) {
-		return service('http/upload')->getFile($key);
+		return $this->httpUpload->getFile($key);
 	}
 
 	/**

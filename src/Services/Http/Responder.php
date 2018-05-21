@@ -1,19 +1,48 @@
 <?php
-namespace Rise\Services;
+namespace Rise\Services\Http;
 
-use Rise\Components\Http\Request;
-use Rise\Components\Http\Response;
+use Rise\Services\BaseService;
+use Rise\Services\Router;
+use Rise\Services\Template;
+use Rise\Factories\Http\ResponseFactory;
 
-class Http extends BaseService {
-	/**
-	 * @var \Rise\Components\Http\Request|null
-	 */
-	protected $request = null;
-
+class Responder extends BaseService {
 	/**
 	 * @var \Rise\Components\Http\Response|null
 	 */
 	protected $response = null;
+
+	/**
+	 * @var \Rise\Services\Http\Receiver
+	 */
+	protected $receiver;
+
+	/**
+	 * @var \Rise\Services\Router
+	 */
+	protected $router;
+
+	/**
+	 * @var \Rise\Services\Template
+	 */
+	protected $template;
+
+	/**
+	 * @var \Rise\Factories\Http\ResponseFactory
+	 */
+	protected $responseFactory;
+
+	public function __construct(
+		Receiver $receiver,
+		Router $router,
+		Template $template,
+		ResponseFactory $responseFactory
+	) {
+		$this->receiver = $receiver;
+		$this->router = $router;
+		$this->template = $template;
+		$this->responseFactory = $responseFactory;
+	}
 
 	/**
 	 * Setup HTTP response for a HTML page.
@@ -23,7 +52,7 @@ class Http extends BaseService {
 	 * @return self
 	 */
 	public function html($template = '', $data = []) {
-		$body = service('template')->renderPage($template, $data);
+		$body = $this->template->renderPage($template, $data);
 		$this->getResponse()->setBody($body);
 		return $this;
 	}
@@ -76,15 +105,8 @@ class Http extends BaseService {
 	 * @return self
 	 */
 	public function redirectRoute($name = '', $params = []) {
-		$this->redirect(service('router')->generateUrl($name, $params));
+		$this->redirect($this->router->generateUrl($name, $params));
 		return $this;
-	}
-
-	/**
-	 * @return \Rise\Components\Http\Request
-	 */
-	public function getRequest() {
-		return $this->request ? $this->request : $this->createRequest();
 	}
 
 	/**
@@ -95,19 +117,11 @@ class Http extends BaseService {
 	}
 
 	/**
-	 * @return \Rise\Components\Http\Request
-	 */
-	protected function createRequest() {
-		$this->request = (new Request)->setMethod($_SERVER['REQUEST_METHOD'])
-			->setRequestUri($_SERVER['REQUEST_URI']);
-		return $this->request;
-	}
-
-	/**
 	 * @return \Rise\Components\Http\Response
 	 */
-	protected function createResponse() {
-		$this->response = (new Response)->setRequest($this->getRequest());
+	private function createResponse() {
+		$request = $this->receiver->getRequest();
+		$this->response = $this->responseFactory->create()->setRequest($request);
 		return $this->response;
 	}
 }

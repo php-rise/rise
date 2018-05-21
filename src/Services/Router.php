@@ -1,6 +1,7 @@
 <?php
 namespace Rise\Services;
 
+use Rise\Services\Http\Receiver;
 use Rise\Components\Router\RoutingEngine;
 use Rise\Components\Router\Scope;
 
@@ -30,11 +31,36 @@ class Router extends BaseService {
 	protected $matchedStatus;
 
 	/**
+	 * @var \Rise\Services\Path
+	 */
+	protected $path;
+
+	/**
+	 * @var \Rise\Services\Http\Receiver
+	 */
+	protected $receiver;
+
+	/**
+	 * @var \Rise\Services\Locale
+	 */
+	protected $locale;
+
+	public function __construct(
+		Path $path,
+		Receiver $receiver,
+		Locale $locale
+	) {
+		$this->path = $path;
+		$this->receiver = $receiver;
+		$this->locale = $locale;
+	}
+
+	/**
 	 * @return self
 	 */
 	public function readConfigurations() {
-		$configurations = require(service('path')->getConfigurationsPath() . '/router.php');
-		$this->routesFile = service('path')->getProjectRootPath() . '/' . $configurations['routesFile'];
+		$configurations = require($this->path->getConfigurationsPath() . '/router.php');
+		$this->routesFile = $this->path->getProjectRootPath() . '/' . $configurations['routesFile'];
 		return $this;
 	}
 
@@ -60,7 +86,7 @@ class Router extends BaseService {
 	 * @return bool
 	 */
 	public function match() {
-		$request = service('http')->getRequest();
+		$request = $this->receiver->getRequest();
 		if ($request->isMethod('POST') && $request->getInput('_method')) {
 			$result = $this->engine->dispatch(
 				strtoupper($request->getInput('_method', $request->getMethod())),
@@ -127,7 +153,7 @@ class Router extends BaseService {
 	 */
 	public function generatePath($name = '', $params = [], $localeCode = null) {
 		if (!$localeCode) {
-			$localeCode = service('locale')->getCurrentLocaleCode();
+			$localeCode = $this->locale->getCurrentLocaleCode();
 		}
 
 		if ($localeCode) {
