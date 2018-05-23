@@ -4,14 +4,6 @@ namespace Rise\Services;
 use ReflectionClass;
 
 class Container extends BaseService {
-	const STORE_SINGLETON = 1;
-	const STORE_FACTORY = 2;
-
-	/**
-	 * @var array
-	 */
-	private $store = [];
-
 	/**
 	 * @var array
 	 */
@@ -23,20 +15,7 @@ class Container extends BaseService {
 	private $factories = [];
 
 	public function __construct() {
-		$this->bindSingleton('Rise\Services\Container');
 		$this->singletons['Rise\Services\Container'] = $this;
-
-		$this->bindSingleton('Rise\Services\Initializer');
-		$this->bindSingleton('Rise\Services\Path');
-		$this->bindSingleton('Rise\Services\Http\Receiver');
-		$this->bindSingleton('Rise\Services\Http\Responder');
-		$this->bindSingleton('Rise\Services\Http\Upload');
-		$this->bindSingleton('Rise\Services\Database');
-		$this->bindSingleton('Rise\Services\Locale');
-		$this->bindSingleton('Rise\Services\Session');
-		$this->bindSingleton('Rise\Services\Router');
-		$this->bindSingleton('Rise\Services\Dispatcher');
-		$this->bindSingleton('Rise\Services\Template');
 
 		$this->bindFactory('Rise\Factories\Container\DynamicFactory');
 		$this->bindFactory('Rise\Factories\Http\RequestFactory');
@@ -47,24 +26,10 @@ class Container extends BaseService {
 	}
 
 	/**
-	 * @param string $class
+	 * @param string $factory
 	 */
-	public function bindSingleton($class) {
-		$this->store[$class] = self::STORE_SINGLETON;
-	}
-
-	/**
-	 * @param string $class
-	 * @param string|\Rise\Factories\BaseFactory $factory
-	 */
-	public function bindFactory($class, $factory = '') {
-		$this->store[$class] = self::STORE_FACTORY;
-		if (empty($factory)) {
-			$factory = $class;
-		}
-		if (is_string($factory)) {
-			$factory = new $factory;
-		}
+	public function bindFactory($class) {
+		$factory = new $class;
 		$factory->setContainer($this);
 		$this->factories[$class] = $factory;
 	}
@@ -73,14 +38,14 @@ class Container extends BaseService {
 	 * Resolve a class.
 	 *
 	 * @param string $class
-	 * @return object|callable
+	 * @return object
 	 */
 	public function get($class) {
-		if (isset($this->store[$class])) {
-			return $this->getFromStore($class);
+		if (isset($this->factories[$class])) {
+			return $this->factories[$class];
 		}
 
-		return $this->getFromNew($class);
+		return $this->getFromSingleton($class);
 	}
 
 	private function getFromNew($class) {
@@ -98,16 +63,6 @@ class Container extends BaseService {
 			array_push($args, $this->get($paramClassName));
 		}
 		return new $class(...$args);
-	}
-
-	private function getFromStore($class) {
-		if ($this->store[$class] === self::STORE_SINGLETON) {
-			return $this->getFromSingleton($class);
-		}
-
-		if ($this->store[$class] === self::STORE_FACTORY) {
-			return $this->factories[$class];
-		}
 	}
 
 	private function getFromSingleton($class) {
