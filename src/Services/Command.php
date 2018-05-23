@@ -50,7 +50,7 @@ class Command extends BaseService {
 	protected $dynamicFactory;
 
 	public function __construct(
-		Initializer $initialize,
+		Initializer $initializer,
 		Path $path,
 		Database $database,
 		DynamicFactory $dynamicFactory
