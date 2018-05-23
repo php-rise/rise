@@ -33,7 +33,7 @@ class Session extends BaseService {
 	/**
 	 * @var string
 	 */
-	protected $csrfTokenFormKey = '_csrf_token';
+	protected $csrfTokenFormKey = '_csrf';
 
 	/**
 	 * @var \Rise\Services\Path
@@ -392,6 +392,6 @@ class Session extends BaseService {
 	 * @return string
 	 */
 	public function generateCsrfHtml() {
-		return '<input type="hidden" name="' . $this->csrfTokenFormKey . '" value="' . $this->getCsrfToken() . '"/>';
+		return '<input type="hidden" name="' . $this->csrfTokenFormKey . '" value="' . $this->getCsrfToken() . '">';
 	}
 }
