@@ -20,6 +20,8 @@ class Container extends BaseService {
 		$this->bindFactory('Rise\Factories\Container\DynamicFactory');
 		$this->bindFactory('Rise\Factories\Http\RequestFactory');
 		$this->bindFactory('Rise\Factories\Http\ResponseFactory');
+		$this->bindFactory('Rise\Factories\Http\Upload\FileFactory');
+		$this->bindFactory('Rise\Factories\Router\ScopeFactory');
 		$this->bindFactory('Rise\Factories\Template\Blocks\BlockFactory');
 		$this->bindFactory('Rise\Factories\Template\Blocks\LayoutFactory');
 		$this->bindFactory('Rise\Factories\Template\Blocks\LayoutableBlockFactory');

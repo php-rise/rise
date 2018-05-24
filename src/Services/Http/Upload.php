@@ -2,8 +2,7 @@
 namespace Rise\Services\Http;
 
 use Rise\Services\BaseService;
-
-use Rise\Components\Http\Upload\File;
+use Rise\Factories\Http\Upload\FileFactory;
 
 class Upload extends BaseService {
 	/**
@@ -19,6 +18,15 @@ class Upload extends BaseService {
 	 * @var array
 	 */
 	protected $files = [];
+
+	/**
+	 * @var \Rise\Factories\Http\Upload\FileFactory
+	 */
+	protected $fileFactory;
+
+	public function __construct(FileFactory $fileFactory) {
+		$this->fileFactory = $fileFactory;
+	}
 
 	/**
 	 * Get uploaded file or files.
@@ -80,7 +88,7 @@ class Upload extends BaseService {
 		}
 
 		$informationKeys = ['name', 'type', 'size', 'tmp_name', 'error'];
-		$file = new File;
+		$file = $this->fileFactory->create();
 
 		foreach ($informationKeys as $informationKey) {
 			$filesDataReference = &$this->filesData[$informationKey];

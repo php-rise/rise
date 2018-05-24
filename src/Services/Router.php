@@ -3,7 +3,7 @@ namespace Rise\Services;
 
 use Rise\Services\Http\Receiver;
 use Rise\Components\Router\RoutingEngine;
-use Rise\Components\Router\Scope;
+use Rise\Factories\Router\ScopeFactory;
 
 class Router extends BaseService {
 	/**
@@ -12,11 +12,6 @@ class Router extends BaseService {
 	 * @var string
 	 */
 	protected $routesFile;
-
-	/**
-	 * @var \Rise\Components\Router\RoutingEngine
-	 */
-	protected $engine;
 
 	/**
 	 * @var mixed
@@ -29,6 +24,16 @@ class Router extends BaseService {
 	 * @var int
 	 */
 	protected $matchedStatus;
+
+	/**
+	 * @var \Rise\Components\Router\RoutingEngine
+	 */
+	protected $engine;
+
+	/**
+	 * @var \Rise\Factories\Router\ScopeFactory
+	 */
+	protected $scopeFactory;
 
 	/**
 	 * @var \Rise\Services\Path
@@ -46,10 +51,14 @@ class Router extends BaseService {
 	protected $locale;
 
 	public function __construct(
+		RoutingEngine $engine,
+		ScopeFactory $scopeFactory,
 		Path $path,
 		Receiver $receiver,
 		Locale $locale
 	) {
+		$this->engine = $engine;
+		$this->scopeFactory = $scopeFactory;
 		$this->path = $path;
 		$this->receiver = $receiver;
 		$this->locale = $locale;
@@ -70,13 +79,9 @@ class Router extends BaseService {
 	 * @return self
 	 */
 	public function buildRoutes() {
-		$engine = new RoutingEngine;
-		$scope = new Scope;
-		$scope->setEngine($engine);
-
+		$scope = $this->scopeFactory->create();
+		$scope->setEngine($this->engine);
 		require($this->routesFile);
-
-		$this->engine = $engine;
 		return $this;
 	}
 
