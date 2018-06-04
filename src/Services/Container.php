@@ -2,6 +2,8 @@
 namespace Rise\Services;
 
 use ReflectionClass;
+use ReflectionException;
+use Rise\Components\Container\NotFoundException;
 
 class Container extends BaseService {
 	/**
@@ -51,20 +53,24 @@ class Container extends BaseService {
 	}
 
 	private function getFromNew($class) {
-		$reflectionClass = new ReflectionClass($class);
-		$constructor = $reflectionClass->getConstructor();
+		try {
+			$reflectionClass = new ReflectionClass($class);
+			$constructor = $reflectionClass->getConstructor();
 
-		if (is_null($constructor)) {
-			return new $class;
-		}
+			if (is_null($constructor)) {
+				return new $class;
+			}
 
-		$params =  $constructor->getParameters();
-		$args = [];
-		foreach ($params as $param) {
-			$paramClassName = $param->getClass()->getName();
-			array_push($args, $this->get($paramClassName));
+			$params =  $constructor->getParameters();
+			$args = [];
+			foreach ($params as $param) {
+				$paramClassName = $param->getClass()->getName();
+				array_push($args, $this->get($paramClassName));
+			}
+			return new $class(...$args);
+		} catch (ReflectionException $e) {
+			throw new NotFoundException("Class $class cannot be constructed");
 		}
-		return new $class(...$args);
 	}
 
 	private function getFromSingleton($class) {
