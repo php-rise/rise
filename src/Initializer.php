@@ -52,7 +52,7 @@ class Initializer {
 	 * @param string $projectRootPath
 	 * @return self
 	 */
-	public function setProjectRootPath($projectRootPath) {
+	public function setProjectRoot($projectRootPath) {
 		$this->path->setProjectRootPath($projectRootPath);
 		return $this;
 	}

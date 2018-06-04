@@ -30,11 +30,6 @@ class Command {
 	protected $namespaces = ['\Rise\Command'];
 
 	/**
-	 * @var \Rise\Initializer
-	 */
-	protected $initializer;
-
-	/**
 	 * @var \Rise\Path
 	 */
 	protected $path;
@@ -50,12 +45,10 @@ class Command {
 	protected $dynamicFactory;
 
 	public function __construct(
-		Initializer $initializer,
 		Path $path,
 		Database $database,
 		DynamicFactory $dynamicFactory
 	) {
-		$this->initializer = $initializer;
 		$this->path = $path;
 		$this->database = $database;
 		$this->dynamicFactory = $dynamicFactory;
@@ -65,8 +58,8 @@ class Command {
 	 * @param string $projectRootPath
 	 * @return self
 	 */
-	public function setProjectRootPath($projectRootPath) {
-		$this->initializer->setProjectRootPath($projectRootPath);
+	public function setProjectRoot($projectRootPath) {
+		$this->path->setProjectRootPath($projectRootPath);
 		return $this;
 	}
 
