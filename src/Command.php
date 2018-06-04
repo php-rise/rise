@@ -27,7 +27,7 @@ class Command {
 	/**
 	 * @var string[]
 	 */
-	protected $namespaces = ['\Rise\Components\Command'];
+	protected $namespaces = ['\Rise\Command'];
 
 	/**
 	 * @var \Rise\Initializer
@@ -183,7 +183,7 @@ class Command {
 
 	/**
 	 * @param string $partClassName
-	 * @return \Rise\Components\Command\BaseCommand|null
+	 * @return \Rise\Command\BaseCommand|null
 	 */
 	protected function createComponentInstance($partClassName) {
 		$namespace = end($this->namespaces);
