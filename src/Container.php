@@ -65,12 +65,18 @@ class Container {
 			return new $class;
 		}
 
-		$params =  $constructor->getParameters();
 		$args = [];
-		foreach ($params as $param) {
-			$paramClassName = $param->getClass()->getName();
-			array_push($args, $this->get($paramClassName));
+
+		try {
+			foreach ($constructor->getParameters() as $param) {
+				$paramClassName = $param->getClass()->getName();
+				array_push($args, $this->get($paramClassName));
+			}
+		} catch (ReflectionException $e) {
+			$paramClassName = (string)$param->getType();
+			throw new NotFoundException("Parameter class $paramClassName not found when constructing $class");
 		}
+
 		return new $class(...$args);
 	}
 
