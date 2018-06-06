@@ -96,10 +96,7 @@ class Dispatcher {
 			list($class, $method) = explode('.', $handler, 2);
 			$class = $this->handlerNamespace . '\\' . $class;
 			$instance = $this->dynamicFactory->create($class);
-			if ($instance->{$method}() === false) {
-				return false;
-			}
-			return true;
+			return !($instance->{$method}() === false);
 		}
 		if (is_array($handler)) {
 			$handlers = $handler;
