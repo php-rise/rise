@@ -155,7 +155,7 @@ class Locale {
 		list(, $localeCode, $requestPath) = array_pad(explode('/', $request->getRequestUri(), 3), 3, null);
 		if (isset($this->locales[$localeCode])) {
 			$this->currentLocaleCode = $localeCode;
-			$request->setRequestPath($requestPath);
+			$request->setRequestPath('/' . $requestPath);
 		} else {
 			$request->setRequestPath($request->getRequestUri());
 		}
