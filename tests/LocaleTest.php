@@ -3,15 +3,21 @@ namespace Rise\Test;
 
 use PHPUnit\Framework\TestCase;
 use Rise\Locale;
-use Rise\Test\LocaleTest\Path;
-use Rise\Test\LocaleTest\Request;
+use Rise\Path;
+use Rise\Http\Request;
 
 final class LocaleTest extends TestCase {
 	public function testConfig() {
-		$path = new Path();
-		$request = new Request();
+		$path = $this->createMock(Path::class);
+		$request = $this->createMock(Request::class);
+
+		$path->expects($this->any())
+			->method('getConfigurationsPath')
+			->willReturn(__DIR__ . '/config');
+
 		$locale = new Locale($path, $request);
 		$locale->readConfigurations();
+
 		$config = require __DIR__ . '/config/locale.php';
 
 		$this->assertSame($config['locales'], $locale->getLocales());
@@ -20,46 +26,87 @@ final class LocaleTest extends TestCase {
 	}
 
 	public function testParseUriWithValidLocale() {
-		$path = new Path();
-		$request = new Request('/zh/a/long/path');
-		$locale = new Locale($path, $request);
+		$path = $this->createMock(Path::class);
+		$request = $this->createMock(Request::class);
 
+		$path->expects($this->any())
+			->method('getConfigurationsPath')
+			->willReturn(__DIR__ . '/config');
+
+		$request->expects($this->any())
+			->method('getRequestUri')
+			->willReturn('/zh/a/long/path');
+
+		$request->expects($this->once())
+			->method('setRequestPath')
+			->with($this->equalTo('/a/long/path'));
+
+		$locale = new Locale($path, $request);
 		$locale->readConfigurations();
 		$locale->parseRequestLocale();
 
 		$this->assertSame('zh', $locale->getCurrentLocaleCode());
-		$this->assertSame('/a/long/path', $request->getRequestPath());
 	}
 
 	public function testParseUriWithInvalidLocale() {
-		$path = new Path();
-		$request = new Request('/zh-hk/a/long/path');
-		$locale = new Locale($path, $request);
+		$path = $this->createMock(Path::class);
+		$request = $this->createMock(Request::class);
 
+		$path->expects($this->any())
+			->method('getConfigurationsPath')
+			->willReturn(__DIR__ . '/config');
+
+		$request->expects($this->any())
+			->method('getRequestUri')
+			->willReturn('/zh-hk/a/long/path');
+
+		$request->expects($this->once())
+			->method('setRequestPath')
+			->with($this->equalTo('/zh-hk/a/long/path'));
+
+		$locale = new Locale($path, $request);
 		$locale->readConfigurations();
 		$locale->parseRequestLocale();
 
 		$this->assertSame($locale->getDefaultLocaleCode(), $locale->getCurrentLocaleCode());
-		$this->assertSame('/zh-hk/a/long/path', $request->getRequestPath());
 	}
 
 	public function testParseUriRoot() {
-		$path = new Path();
-		$request = new Request('/zh');
-		$locale = new Locale($path, $request);
+		$path = $this->createMock(Path::class);
+		$request = $this->createMock(Request::class);
 
+		$path->expects($this->any())
+			->method('getConfigurationsPath')
+			->willReturn(__DIR__ . '/config');
+
+		$request->expects($this->any())
+			->method('getRequestUri')
+			->willReturn('/zh');
+
+		$request->expects($this->once())
+			->method('setRequestPath')
+			->with($this->equalTo('/'));
+
+		$locale = new Locale($path, $request);
 		$locale->readConfigurations();
 		$locale->parseRequestLocale();
 
 		$this->assertSame('zh', $locale->getCurrentLocaleCode());
-		$this->assertSame('/', $request->getRequestPath());
 	}
 
 	public function testTranslate() {
-		$path = new Path();
-		$request = new Request('/zh/a/long/path');
-		$locale = new Locale($path, $request);
+		$path = $this->createMock(Path::class);
+		$request = $this->createMock(Request::class);
 
+		$path->expects($this->any())
+			->method('getConfigurationsPath')
+			->willReturn(__DIR__ . '/config');
+
+		$request->expects($this->any())
+			->method('getRequestUri')
+			->willReturn('/zh/a/long/path');
+
+		$locale = new Locale($path, $request);
 		$locale->readConfigurations();
 		$locale->parseRequestLocale();
 
@@ -67,10 +114,18 @@ final class LocaleTest extends TestCase {
 	}
 
 	public function testTranslationWhenNotFound() {
-		$path = new Path();
-		$request = new Request('/zh/a/long/path');
-		$locale = new Locale($path, $request);
+		$path = $this->createMock(Path::class);
+		$request = $this->createMock(Request::class);
 
+		$path->expects($this->any())
+			->method('getConfigurationsPath')
+			->willReturn(__DIR__ . '/config');
+
+		$request->expects($this->any())
+			->method('getRequestUri')
+			->willReturn('/zh/a/long/path');
+
+		$locale = new Locale($path, $request);
 		$locale->readConfigurations();
 		$locale->parseRequestLocale();
 
@@ -78,10 +133,18 @@ final class LocaleTest extends TestCase {
 	}
 
 	public function testTranslationForSpecificLocale() {
-		$path = new Path();
-		$request = new Request('/zh/a/long/path');
-		$locale = new Locale($path, $request);
+		$path = $this->createMock(Path::class);
+		$request = $this->createMock(Request::class);
 
+		$path->expects($this->any())
+			->method('getConfigurationsPath')
+			->willReturn(__DIR__ . '/config');
+
+		$request->expects($this->any())
+			->method('getRequestUri')
+			->willReturn('/zh/a/long/path');
+
+		$locale = new Locale($path, $request);
 		$locale->readConfigurations();
 		$locale->parseRequestLocale();
 

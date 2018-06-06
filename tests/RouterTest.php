@@ -2,12 +2,13 @@
 namespace Rise\Test;
 
 use PHPUnit\Framework\TestCase;
+use Rise\Router\RoutingEngine;
+use Rise\Router\ScopeFactory;
+use Rise\Router\Scope;
+use Rise\Path;
+use Rise\Http\Request;
+use Rise\Locale;
 use Rise\Test\RouterTest\Router;
-use Rise\Test\RouterTest\RoutingEngine;
-use Rise\Test\RouterTest\ScopeFactory;
-use Rise\Test\RouterTest\Path;
-use Rise\Test\RouterTest\Request;
-use Rise\Test\RouterTest\Locale;
 
 final class RouterTest extends TestCase {
 	public function setUp() {
@@ -15,80 +16,80 @@ final class RouterTest extends TestCase {
 	}
 
 	public function testConfig() {
-		$routingEngine = new RoutingEngine();
-		$scopeFactory = new ScopeFactory();
-		$path = new Path();
-		$request = new Request();
-		$locale = new Locale();
-		$router = new Router($routingEngine, $scopeFactory, $path, $request, $locale);
+		$routingEngine = $this->createMock(RoutingEngine::class);
+		$scopeFactory = $this->createMock(ScopeFactory::class);
+		$path = $this->createMock(Path::class);
+		$request = $this->createMock(Request::class);
+		$locale = $this->createMock(Locale::class);
 
+		$path->expects($this->any())
+			->method('getProjectRootPath')
+			->willReturn(__DIR__);
+
+		$path->expects($this->any())
+			->method('getConfigurationsPath')
+			->willReturn(__DIR__ . '/config');
+
+		$router = new Router($routingEngine, $scopeFactory, $path, $request, $locale);
 		$router->readConfigurations();
 
 		$this->assertSame(__DIR__ . '/config/routes.php', $router->getRoutesFile());
+		$this->assertSame('Errors\NotFound.html', $router->getNotFoundHandler());
 	}
 
-	public function testMatchRoot() {
-		$routingEngine = new RoutingEngine();
-		$scopeFactory = new ScopeFactory();
-		$path = new Path();
-		$request = new Request('/');
-		$locale = new Locale();
-		$router = new Router($routingEngine, $scopeFactory, $path, $request, $locale);
+	public function testMatch() {
+		$routingEngine = $this->createMock(RoutingEngine::class);
+		$scopeFactory = $this->createMock(ScopeFactory::class);
+		$path = $this->createMock(Path::class);
+		$request = $this->createMock(Request::class);
+		$locale = $this->createMock(Locale::class);
 
-		$router->readConfigurations();
-		$router->buildRoutes();
+		$routingEngine->expects($this->once())
+			->method('dispatch')
+			->willReturn([
+				'handler' => 'Product.show',
+				'params' => [
+					'id' => 15,
+				],
+			]);
+
+		$request->expects($this->once())
+			->method('setParams')
+			->with($this->equalTo(['id' => 15]));
+
+		$router = new Router($routingEngine, $scopeFactory, $path, $request, $locale);
 		$matched = $router->match();
 
 		$this->assertTrue($matched);
 		$this->assertSame(200, $router->getMatchedStatus());
-		$this->assertSame(['Home.index'], $router->getMatchedHandler());
-	}
-
-	public function testMatchPath() {
-		$routingEngine = new RoutingEngine();
-		$scopeFactory = new ScopeFactory();
-		$path = new Path();
-		$request = new Request('/contact');
-		$locale = new Locale();
-		$router = new Router($routingEngine, $scopeFactory, $path, $request, $locale);
-
-		$router->readConfigurations();
-		$router->buildRoutes();
-		$matched = $router->match();
-
-		$this->assertTrue($matched);
-		$this->assertSame(200, $router->getMatchedStatus());
-		$this->assertSame(['Contact.index'], $router->getMatchedHandler());
-	}
-
-	public function testMatchPathWithParams() {
-		$routingEngine = new RoutingEngine();
-		$scopeFactory = new ScopeFactory();
-		$path = new Path();
-		$request = new Request('/products/15');
-		$locale = new Locale();
-		$router = new Router($routingEngine, $scopeFactory, $path, $request, $locale);
-
-		$router->readConfigurations();
-		$router->buildRoutes();
-		$matched = $router->match();
-
-		$this->assertTrue($matched);
-		$this->assertSame(200, $router->getMatchedStatus());
-		$this->assertSame(['Product.show'], $router->getMatchedHandler());
-		$this->assertSame('15', $request->getParam('id'));
+		$this->assertSame('Product.show', $router->getMatchedHandler());
 	}
 
 	public function testNotMatch() {
-		$routingEngine = new RoutingEngine();
-		$scopeFactory = new ScopeFactory();
-		$path = new Path();
-		$request = new Request('/not/found');
-		$locale = new Locale();
-		$router = new Router($routingEngine, $scopeFactory, $path, $request, $locale);
+		$routingEngine = $this->createMock(RoutingEngine::class);
+		$scopeFactory = $this->createMock(ScopeFactory::class);
+		$path = $this->createMock(Path::class);
+		$request = $this->createMock(Request::class);
+		$locale = $this->createMock(Locale::class);
 
+		$routingEngine->expects($this->once())
+			->method('dispatch')
+			->willReturn([
+				'error' => [
+					'code' => 404,
+				],
+			]);
+
+		$path->expects($this->any())
+			->method('getProjectRootPath')
+			->willReturn(__DIR__);
+
+		$path->expects($this->any())
+			->method('getConfigurationsPath')
+			->willReturn(__DIR__ . '/config');
+
+		$router = new Router($routingEngine, $scopeFactory, $path, $request, $locale);
 		$router->readConfigurations();
-		$router->buildRoutes();
 		$matched = $router->match();
 
 		$this->assertFalse($matched);
@@ -96,35 +97,43 @@ final class RouterTest extends TestCase {
 		$this->assertSame('Errors\NotFound.html', $router->getMatchedHandler());
 	}
 
-	public function testGenerateUrl() {
-		$routingEngine = new RoutingEngine();
-		$scopeFactory = new ScopeFactory();
-		$path = new Path();
-		$request = new Request();
-		$locale = new Locale();
+	public function testGeneratePathWithLocale() {
+		$routingEngine = $this->createMock(RoutingEngine::class);
+		$scopeFactory = $this->createMock(ScopeFactory::class);
+		$path = $this->createMock(Path::class);
+		$request = $this->createMock(Request::class);
+		$locale = $this->createMock(Locale::class);
+
+		$routingEngine->expects($this->once())
+			->method('generatePath')
+			->willReturn('/contact');
+
+		$locale->expects($this->once())
+			->method('getCurrentLocaleCode')
+			->willReturn('en');
+
 		$router = new Router($routingEngine, $scopeFactory, $path, $request, $locale);
 
-		$router->readConfigurations();
-		$router->buildRoutes();
-
-		$this->assertSame('http://www.example.com/', $router->generateUrl('root'));
-		$this->assertSame('http://www.example.com/contact', $router->generateUrl('contact'));
-		$this->assertSame('http://www.example.com/products/15', $router->generateUrl('productDetail', ['id' => 15]));
+		$this->assertSame('/en/contact', $router->generatePath(''));
 	}
 
-	public function testGeneratePath() {
-		$routingEngine = new RoutingEngine();
-		$scopeFactory = new ScopeFactory();
-		$path = new Path();
-		$request = new Request();
-		$locale = new Locale();
+	public function testGeneratePathWithoutLocale() {
+		$routingEngine = $this->createMock(RoutingEngine::class);
+		$scopeFactory = $this->createMock(ScopeFactory::class);
+		$path = $this->createMock(Path::class);
+		$request = $this->createMock(Request::class);
+		$locale = $this->createMock(Locale::class);
+
+		$routingEngine->expects($this->once())
+			->method('generatePath')
+			->willReturn('/contact');
+
+		$locale->expects($this->once())
+			->method('getCurrentLocaleCode')
+			->willReturn('');
+
 		$router = new Router($routingEngine, $scopeFactory, $path, $request, $locale);
 
-		$router->readConfigurations();
-		$router->buildRoutes();
-
-		$this->assertSame('/', $router->generatePath('root'));
-		$this->assertSame('/contact', $router->generatePath('contact'));
-		$this->assertSame('/products/16', $router->generatePath('productDetail', ['id' => 16]));
+		$this->assertSame('/contact', $router->generatePath(''));
 	}
 }
