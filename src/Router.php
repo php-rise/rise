@@ -14,6 +14,11 @@ class Router {
 	protected $routesFile;
 
 	/**
+	 * @var string
+	 */
+	protected $notFoundHandler;
+
+	/**
 	 * @var mixed
 	 */
 	protected $matchedHandler;
@@ -70,6 +75,9 @@ class Router {
 	public function readConfigurations() {
 		$configurations = require($this->path->getConfigurationsPath() . '/router.php');
 		$this->routesFile = $this->path->getProjectRootPath() . '/' . $configurations['routesFile'];
+		if (isset($configurations['notFoundHandler'])) {
+			$this->notFoundHandler = $configurations['notFoundHandler'];
+		}
 		return $this;
 	}
 
@@ -105,9 +113,11 @@ class Router {
 			switch ($result['error']['code']) {
 			case 404:
 				$this->matchedStatus = 404;
+				$this->matchedHandler = $this->notFoundHandler;
 				return false;
 			case 405:
 				$this->matchedStatus = 405;
+				$this->matchedHandler = $this->notFoundHandler;
 				return false;
 			}
 		} else {

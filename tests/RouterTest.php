@@ -93,7 +93,7 @@ final class RouterTest extends TestCase {
 
 		$this->assertFalse($matched);
 		$this->assertSame(404, $router->getMatchedStatus());
-		$this->assertEmpty($router->getMatchedHandler());
+		$this->assertSame('Errors\NotFound.html', $router->getMatchedHandler());
 	}
 
 	public function testGenerateUrl() {

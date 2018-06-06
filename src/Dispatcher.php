@@ -80,6 +80,10 @@ class Dispatcher {
 			$this->session->clearFlash()
 				->rememberCsrfToken();
 		} else {
+			$matchedHandler = $this->router->getMatchedHandler();
+			if ($matchedHandler) {
+				$this->getHandlerResult($matchedHandler);
+			}
 			$this->response
 				->setStatusCode($this->router->getMatchedStatus())
 				->send();
