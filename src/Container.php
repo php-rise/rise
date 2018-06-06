@@ -9,12 +9,17 @@ class Container {
 	/**
 	 * @var array
 	 */
-	private $singletons = [];
+	protected $aliases = [];
 
 	/**
 	 * @var array
 	 */
-	private $factories = [];
+	protected $singletons = [];
+
+	/**
+	 * @var array
+	 */
+	protected $factories = [];
 
 	public function __construct() {
 		$this->singletons['Rise\Container'] = $this;
@@ -30,12 +35,28 @@ class Container {
 	}
 
 	/**
-	 * @param string $factory
+	 * Bind a class name to another class.
+	 *
+	 * @param string $class
+	 * @param string $to
 	 */
-	public function bindFactory($class) {
-		$factory = new $class;
-		$factory->setContainer($this);
-		$this->factories[$class] = $factory;
+	public function bind($class, $to) {
+		$this->aliases[$class] = $to;
+	}
+
+	/**
+	 * Construct a factory instance and inject this container to the instance.
+	 *
+	 * @param string $factory
+	 * @param string $to Optional
+	 */
+	public function bindFactory($class, $to = null) {
+		if (!empty($to)) {
+			$this->bind($class, $to);
+			$class = $to;
+		}
+
+		$this->factories[$class] = null;
 	}
 
 	/**
@@ -45,13 +66,23 @@ class Container {
 	 * @return object
 	 */
 	public function get($class) {
-		if (isset($this->factories[$class])) {
-			return $this->factories[$class];
+		if (isset($this->aliases[$class])) {
+			$class = $this->aliases[$class];
+		}
+
+		if (array_key_exists($class, $this->factories)) {
+			return $this->getFactory($class);
 		}
 
 		return $this->getSingleton($class);
 	}
 
+	/**
+	 * Construct an new instance of a class with its dependencies.
+	 *
+	 * @param string $class
+	 * @return object
+	 */
 	public function getNewInstance($class) {
 		try {
 			$reflectionClass = new ReflectionClass($class);
@@ -80,7 +111,13 @@ class Container {
 		return new $class(...$args);
 	}
 
-	private function getSingleton($class) {
+	/**
+	 * Get singleton of a class.
+	 *
+	 * @param string $class
+	 * @return object
+	 */
+	protected function getSingleton($class) {
 		if (isset($this->singletons[$class])) {
 			return $this->singletons[$class];
 		}
@@ -88,5 +125,21 @@ class Container {
 		$instance = $this->getNewInstance($class);
 		$this->singletons[$class] = $instance;
 		return $instance;
+	}
+
+	/**
+	 * Get a factory instance.
+	 *
+	 * @param string $class
+	 * @return object
+	 */
+	protected function getFactory($class) {
+		if (isset($this->factories[$class])) {
+			return $this->factories[$class];
+		}
+
+		$factory = new $class($this);
+		$this->factories[$class] = $factory;
+		return $factory;
 	}
 }
