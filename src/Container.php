@@ -25,8 +25,6 @@ class Container {
 		$this->singletons['Rise\Container'] = $this;
 
 		$this->bindFactory('Rise\Container\DynamicFactory');
-		$this->bindFactory('Rise\Http\Receiver\RequestFactory');
-		$this->bindFactory('Rise\Http\Responder\ResponseFactory');
 		$this->bindFactory('Rise\Http\Upload\FileFactory');
 		$this->bindFactory('Rise\Router\ScopeFactory');
 		$this->bindFactory('Rise\Template\Blocks\BlockFactory');

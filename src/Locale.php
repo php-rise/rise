@@ -1,7 +1,7 @@
 <?php
 namespace Rise;
 
-use Rise\Http\Receiver;
+use Rise\Http\Request;
 
 class Locale {
 	/**
@@ -54,13 +54,13 @@ class Locale {
 	protected $path;
 
 	/**
-	 * @var \Rise\Http\Receiver
+	 * @var \Rise\Http\Request
 	 */
-	protected $receiver;
+	protected $request;
 
-	public function __construct(Path $path, Receiver $receiver) {
+	public function __construct(Path $path, Request $request) {
 		$this->path = $path;
-		$this->receiver = $receiver;
+		$this->request = $request;
 	}
 
 	/**
@@ -151,7 +151,7 @@ class Locale {
 	 * @return self
 	 */
 	public function parseRequestLocale() {
-		$request = $this->receiver->getRequest();
+		$request = $this->request;
 		list(, $localeCode, $requestPath) = array_pad(explode('/', $request->getRequestUri(), 3), 3, null);
 		if (isset($this->locales[$localeCode])) {
 			$this->currentLocaleCode = $localeCode;

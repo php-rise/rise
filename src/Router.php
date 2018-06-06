@@ -1,7 +1,7 @@
 <?php
 namespace Rise;
 
-use Rise\Http\Receiver;
+use Rise\Http\Request;
 use Rise\Router\RoutingEngine;
 use Rise\Router\ScopeFactory;
 
@@ -41,9 +41,9 @@ class Router {
 	protected $path;
 
 	/**
-	 * @var \Rise\Http\Receiver
+	 * @var \Rise\Http\Request
 	 */
-	protected $receiver;
+	protected $request;
 
 	/**
 	 * @var \Rise\Locale
@@ -54,13 +54,13 @@ class Router {
 		RoutingEngine $engine,
 		ScopeFactory $scopeFactory,
 		Path $path,
-		Receiver $receiver,
+		Request $request,
 		Locale $locale
 	) {
 		$this->engine = $engine;
 		$this->scopeFactory = $scopeFactory;
 		$this->path = $path;
-		$this->receiver = $receiver;
+		$this->request = $request;
 		$this->locale = $locale;
 	}
 
@@ -91,7 +91,7 @@ class Router {
 	 * @return bool
 	 */
 	public function match() {
-		$request = $this->receiver->getRequest();
+		$request = $this->request;
 		if ($request->isMethod('POST') && $request->getInput('_method')) {
 			$result = $this->engine->dispatch(
 				strtoupper($request->getInput('_method', $request->getMethod())),

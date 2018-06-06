@@ -1,7 +1,7 @@
 <?php
 namespace Rise;
 
-use Rise\Http\Responder;
+use Rise\Http\Response;
 use Rise\Container\DynamicFactory;
 
 class Dispatcher {
@@ -21,9 +21,9 @@ class Dispatcher {
 	protected $router;
 
 	/**
-	 * @var \Rise\Http\Responder
+	 * @var \Rise\Http\Response
 	 */
-	protected $responder;
+	protected $response;
 
 	/**
 	 * @var \Rise\Session
@@ -38,13 +38,13 @@ class Dispatcher {
 	public function __construct(
 		Path $path,
 		Router $router,
-		Responder $responder,
+		Response $response,
 		Session $session,
 		DynamicFactory $dynamicFactory
 	) {
 		$this->path = $path;
 		$this->router = $router;
-		$this->responder = $responder;
+		$this->response = $response;
 		$this->session = $session;
 		$this->dynamicFactory = $dynamicFactory;
 	}
@@ -76,11 +76,11 @@ class Dispatcher {
 		if ($this->router->match()) {
 			$this->session->toggleCurrentFlashBagKey();
 			$this->getHandlerResult($this->router->getMatchedHandler());
-			$this->responder->getResponse()->send();
+			$this->response->send();
 			$this->session->clearFlash()
 				->rememberCsrfToken();
 		} else {
-			$this->responder->getResponse()
+			$this->response
 				->setStatusCode($this->router->getMatchedStatus())
 				->send();
 		}

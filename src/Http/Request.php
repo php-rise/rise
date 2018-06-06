@@ -1,7 +1,5 @@
 <?php
-namespace Rise\Http\Receiver;
-
-use Rise\Http\Upload;
+namespace Rise\Http;
 
 class Request {
 	/**
@@ -36,6 +34,8 @@ class Request {
 	protected $httpUpload;
 
 	public function __construct(Upload $upload) {
+		$this->requestUri = $_SERVER['REQUEST_URI'];
+		$this->method = $_SERVER['REQUEST_METHOD'];
 		$this->httpUpload = $upload;
 	}
 
@@ -49,23 +49,12 @@ class Request {
 	}
 
 	/**
-	 * Set request URI.
-	 *
-	 * @param string $requestUri
-	 * @return self
-	 */
-	public function setRequestUri($requestUri = '') {
-		$this->requestUri = $requestUri;
-		return $this;
-	}
-
-	/**
 	 * Get request path.
 	 *
 	 * @return string
 	 */
 	public function getRequestPath() {
-		return $this->requestPath;
+		return $this->requestPath ? $this->requestPath : $this->getRequestUri();
 	}
 
 	/**
@@ -86,17 +75,6 @@ class Request {
 	 */
 	public function getMethod() {
 		return $this->method;
-	}
-
-	/**
-	 * Set HTTP method.
-	 *
-	 * @param string $method
-	 * @return self
-	 */
-	public function setMethod($method = '') {
-		$this->method = $method;
-		return $this;
 	}
 
 	/**

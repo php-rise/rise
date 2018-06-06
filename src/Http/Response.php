@@ -1,5 +1,8 @@
 <?php
-namespace Rise\Http\Responder;
+namespace Rise\Http;
+
+use Rise\Router;
+use Rise\Template;
 
 class Response {
 	// @NOTE HTTP status codes from Symfony\Component\HttpFoundation\Response
@@ -63,11 +66,6 @@ class Response {
 	const HTTP_LOOP_DETECTED = 508;                                               // RFC5842
 	const HTTP_NOT_EXTENDED = 510;                                                // RFC2774
 	const HTTP_NETWORK_AUTHENTICATION_REQUIRED = 511;                             // RFC6585
-
-	/**
-	 * @var \Rise\Http\Receiver\Request|null
-	 */
-	protected $request = null;
 
 	/**
 	 * @var int
@@ -160,23 +158,109 @@ class Response {
 	 */
 	protected $charset = 'UTF-8';
 
+	/**
+	 * @var array
+	 */
 	protected $headers = [];
 
+	/**
+	 * @var string
+	 */
 	protected $body = '';
+
+	/**
+	 * @var \Rise\Http\Request
+	 */
+	protected $request;
+
+	/**
+	 * @var \Rise\Router
+	 */
+	protected $router;
+
+	/**
+	 * @var \Rise\Template
+	 */
+	protected $template;
+
+	public function __construct(
+		Request $request,
+		Router $router,
+		Template $template
+	) {
+		$this->request = $request;
+		$this->router = $router;
+		$this->template = $template;
+	}
+
+	/**
+	 * Setup HTTP response for a HTML page.
+	 *
+	 * @param string $template
+	 * @param array $data optional
+	 * @return self
+	 */
+	public function html($template = '', $data = []) {
+		$body = $this->template->renderPage($template, $data);
+		$this->setBody($body);
+		return $this;
+	}
+
+	/**
+	 * Setup HTTP response for JSON.
+	 *
+	 * @param array $data
+	 * @return self
+	 */
+	public function json($data = []) {
+		$this->setHeader('Content-Type', 'application/json')
+			->setBody(json_encode($data));
+		return $this;
+	}
+
+	/**
+	 * Setup HTTP redirect.
+	 *
+	 * @param string $url
+	 * @param bool $permanent optional
+	 * @return self
+	 */
+	public function redirect($url, $permanent = false) {
+		$statusCode = $permanent ? 301 : 302;
+		$this->setStatusCode($statusCode)
+			->setHeader('Location', $url)
+			->setBody(sprintf('<!DOCTYPE html>
+<meta charset="UTF-8">
+<meta http-equiv="refresh" content="1;url=%1$s">
+<title>Redirecting to %1$s</title>
+Redirecting to <a href="%1$s">%1$s</a>.', htmlspecialchars($url, ENT_QUOTES, 'UTF-8')));
+
+		return $this;
+	}
+
+	/**
+	 * HTTP redirect to a named route.
+	 *
+	 * @param string $routeName
+	 * @param array $params
+	 * @return self
+	 */
+	public function redirectRoute($name = '', $params = []) {
+		$this->redirect($this->router->generateUrl($name, $params));
+		return $this;
+	}
 
 	/**
 	 * @return self
 	 */
 	public function send() {
-		$request = $this->getRequest();
-
-		if ($request && $request->isMethod('HEAD')) {
+		if ($this->request && $this->request->isMethod('HEAD')) {
 			$this->unsetHeader('Content-Length');
 			$this->setBody('');
 		}
 
 		if (!$this->hasHeader('Content-Type')) {
-			$this->setHeader('Content-Type', $this->getContentType().'; charset='.$this->getCharset());
+			$this->setHeader('Content-Type', $this->contentType.'; charset='.$this->charset);
 		}
 
 		$this->sendHeaders();
@@ -196,69 +280,6 @@ class Response {
 	}
 
 	/**
-	 * @return self
-	 */
-	public function sendHeaders() {
-		header($this->getStatusLine(), true, $this->statusCode);
-
-		$headers = $this->getHeaders();
-		foreach ($headers as $name => $values) {
-			foreach ($values as $value) {
-				header($name.': '.$value, false, $this->statusCode);
-			}
-		}
-
-		// @TODO set cookies
-		// setcookie();
-
-		header_remove('X-Powered-By');
-
-		return $this;
-	}
-
-	/**
-	 * @return string
-	 */
-	protected function getStatusLine() {
-		$serverProtocol = isset($_SERVER['SERVER_PROTOCOL']) ? $_SERVER['SERVER_PROTOCOL'] : null;
-		if ($serverProtocol == 'HTTP/1.1' || $serverProtocol == 'HTTP/1.0') {
-		} else {
-			$serverProtocol = 'HTTP/1.1';
-		}
-		$statusText = isset($this->statusTexts[$this->statusCode]) ? $this->statusTexts[$this->statusCode] : '';
-		$statusLine = $serverProtocol.' '.$this->statusCode.' '.$statusText;
-		return $statusLine;
-	}
-
-	/**
-	 * @return self
-	 */
-	public function sendBody() {
-		echo $this->getBody();
-		return $this;
-	}
-
-	/**
-	 * Get request instance.
-	 *
-	 * @return \Rise\Http\Receiver\Request
-	 */
-	public function getRequest() {
-		return $this->request;
-	}
-
-	/**
-	 * Set request instance.
-	 *
-	 * @param \Rise\Http\Receiver\Request $request
-	 * @return self
-	 */
-	public function setRequest($request) {
-		$this->request = $request;
-		return $this;
-	}
-
-	/**
 	 * Set HTTP status code.
 	 *
 	 * @param int $code
@@ -266,37 +287,6 @@ class Response {
 	 */
 	public function setStatusCode($code = 200) {
 		$this->statusCode = (int)$code;
-		return $this;
-	}
-
-	/**
-	 * @return string
-	 */
-	public function getContentType() {
-		return $this->contentType;
-	}
-
-	/**
-	 * @param string $contentType
-	 * @return self
-	 */
-	public function setContentType($contentType = '') {
-		$this->contentType = $contentType;
-		return $this;
-	}
-
-	/**
-	 * @return string
-	 */
-	public function getCharset() {
-		return $this->charset;
-	}
-
-	/**
-	 * @return self
-	 */
-	public function setCharset($charset = '') {
-		$this->charset = $charset;
 		return $this;
 	}
 
@@ -359,18 +349,71 @@ class Response {
 	}
 
 	/**
-	 * @return string
-	 */
-	public function getBody() {
-		return $this->body;
-	}
-
-	/**
 	 * @param string $body
 	 * @return self
 	 */
 	public function setBody($body = '') {
 		$this->body = $body;
+		return $this;
+	}
+
+	/**
+	 * @param string $contentType
+	 * @return self
+	 */
+	public function setContentType($contentType = '') {
+		$this->contentType = $contentType;
+		return $this;
+	}
+
+	/**
+	 * @return self
+	 */
+	public function setCharset($charset = '') {
+		$this->charset = $charset;
+		return $this;
+	}
+
+	/**
+	 * @return self
+	 */
+	protected function sendHeaders() {
+		header($this->getStatusLine(), true, $this->statusCode);
+
+		$headers = $this->getHeaders();
+		foreach ($headers as $name => $values) {
+			foreach ($values as $value) {
+				header($name.': '.$value, false, $this->statusCode);
+			}
+		}
+
+		// @TODO set cookies
+		// setcookie();
+
+		header_remove('X-Powered-By');
+
+		return $this;
+	}
+
+	/**
+	 * @return string
+	 */
+	protected function getStatusLine() {
+		$serverProtocol = isset($_SERVER['SERVER_PROTOCOL']) ? $_SERVER['SERVER_PROTOCOL'] : null;
+		if ($serverProtocol == 'HTTP/1.1' || $serverProtocol == 'HTTP/1.0') {
+		} else {
+			$serverProtocol = 'HTTP/1.1';
+		}
+		$statusText = isset($this->statusTexts[$this->statusCode]) ? $this->statusTexts[$this->statusCode] : '';
+		$statusLine = $serverProtocol.' '.$this->statusCode.' '.$statusText;
+		return $statusLine;
+	}
+
+	/**
+	 * @return self
+	 */
+	protected function sendBody() {
+		echo $this->body;
 		return $this;
 	}
 
