@@ -13,13 +13,13 @@ class Command {
 	 * @var array
 	 */
 	protected $rules = [
-		'help' => 'Help.show',
+		'help' => 'Help.show Show help',
 		'database' => [
-			'initialize' => 'Database\Initializer.initialize',
+			'initialize' => 'Database\Initializer.initialize Create database and the migration table',
 			'migration' => [
-				'create' => 'Database\Migrator.create',
-				'migrate' => 'Database\Migrator.migrate',
-				'rollback' => 'Database\Migrator.rollback',
+				'create' => 'Database\Migrator.create Create a migration file',
+				'migrate' => 'Database\Migrator.migrate Migrate changes to database',
+				'rollback' => 'Database\Migrator.rollback Rollback to previous migration',
 			],
 		],
 	];
@@ -64,11 +64,12 @@ class Command {
 	}
 
 	/**
-	 * @param string[] $argv
 	 * @return self
 	 */
-	public function setArguments($arguments) {
-		$this->arguments = $arguments;
+	public function run() {
+		$this->readConfigurations();
+		$this->database->readConfigurations();
+		$this->execute($this->arguments);
 		return $this;
 	}
 
@@ -84,13 +85,26 @@ class Command {
 	}
 
 	/**
+	 * @return string[]
+	 */
+	public function getArguments() {
+		return $this->arguments;
+	}
+
+	/**
+	 * @param string[] $argv
 	 * @return self
 	 */
-	public function run() {
-		$this->readConfigurations();
-		$this->database->readConfigurations();
-		$this->execute($this->arguments);
+	public function setArguments($arguments) {
+		$this->arguments = $arguments;
 		return $this;
+	}
+
+	/**
+	 * @return array
+	 */
+	public function getRules() {
+		return $this->rules;
 	}
 
 	/**
@@ -156,6 +170,10 @@ class Command {
 	 * @return array|null
 	 */
 	protected function parseArguments($arguments) {
+		if (empty($arguments)) {
+			$arguments = ['help'];
+		}
+
 		$ruleReference = &$this->rules;
 		while ($argument = reset($arguments)) {
 			if (isset($ruleReference[$argument])) {
@@ -167,7 +185,8 @@ class Command {
 		}
 
 		if (is_string($ruleReference)) {
-			list($class, $method) = array_pad(explode('.', $ruleReference, 2), 2, null);
+			list ($handler, ) = explode(' ', $ruleReference, 2);
+			list($class, $method) = array_pad(explode('.', $handler, 2), 2, null);
 			return [$class, $method, $arguments];
 		}
 
