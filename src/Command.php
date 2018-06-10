@@ -14,8 +14,8 @@ class Command {
 	 */
 	protected $rules = [
 		'help' => 'Help.show Show help',
-		'database' => [
-			'initialize' => 'Database\Initializer.initialize Create database and the migration table',
+		'db' => [
+			'init' => 'Database\Initializer.initialize Create database and the migration table',
 			'migration' => [
 				'create' => 'Database\Migrator.create Create a migration file',
 				'migrate' => 'Database\Migrator.migrate Migrate changes to database',
@@ -35,22 +35,15 @@ class Command {
 	protected $path;
 
 	/**
-	 * @var \Rise\Database
-	 */
-	protected $database;
-
-	/**
 	 * @var \Rise\Container\DynamicFactory
 	 */
 	protected $dynamicFactory;
 
 	public function __construct(
 		Path $path,
-		Database $database,
 		DynamicFactory $dynamicFactory
 	) {
 		$this->path = $path;
-		$this->database = $database;
 		$this->dynamicFactory = $dynamicFactory;
 	}
 
@@ -68,7 +61,6 @@ class Command {
 	 */
 	public function run() {
 		$this->readConfigurations();
-		$this->database->readConfigurations();
 		$this->execute($this->arguments);
 		return $this;
 	}
