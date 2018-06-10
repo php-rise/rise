@@ -2,27 +2,82 @@
 namespace Rise\Test;
 
 use PHPUnit\Framework\TestCase;
+use org\bovigo\vfs\vfsStream;
 use Rise\Locale;
 use Rise\Path;
 use Rise\Http\Request;
 
 final class LocaleTest extends TestCase {
-	public function testConfig() {
-		$path = $this->createMock(Path::class);
-		$request = $this->createMock(Request::class);
+	private $root;
 
-		$path->expects($this->any())
-			->method('getConfigurationsPath')
-			->willReturn(__DIR__ . '/config');
+	public function setUp() {
+		$configContent = <<<EOD
+<?php
+/**
+ * Configurations of locale.
+ *
+ * "locales": Locales enabled in the website.
+ *            Format: [
+ *                '<locale code>' => [
+ *                    'name' => '<locale name>',
+ *                ],
+ *                ...
+ *            ]
+ *
+ * "defaultLocaleCode": Optional. Default locale code will be used when the locale code cannot be detected from url.
+ *
+ * "translations": Translations.
+ *                 Format: [
+ *                     '<locale code>' => [
+ *                         '<key1>' => '<value1>',
+ *                         '<key2>' => [
+ *                             '<nested key>' => '<value2>',
+ *                             ...
+ *                         ],
+ *                         ...
+ *                     ],
+ *                     ...
+ *                 ]
+ *
+ * @var array
+ */
+return [
+	'defaultLocaleCode' => 'en',
 
-		$locale = new Locale($path, $request);
-		$locale->readConfigurations();
+	'locales' => [
+		'en' => [
+			'name' => 'English',
+		],
+		'zh' => [
+			'name' => '中文',
+		],
+	],
 
-		$config = require __DIR__ . '/config/locale.php';
-
-		$this->assertSame($config['locales'], $locale->getLocales());
-		$this->assertSame($config['defaultLocaleCode'], $locale->getDefaultLocaleCode());
-		$this->assertSame($config['translations'], $locale->getTranslations());
+	'translations' => [
+		'en' => [
+			'hello' => 'Hello',
+			'oh' => [
+				'my' => [
+					'god' => 'God',
+				],
+			],
+		],
+		'zh' => [
+			'hello' => '你好',
+			'oh' => [
+				'my' => [
+					'god' => '神',
+				],
+			],
+		],
+	],
+];
+EOD;
+		$this->root = vfsStream::setup('root', null, [
+			'config' => [
+				'locale.php' => $configContent
+			]
+		]);
 	}
 
 	public function testParseUriWithValidLocale() {
@@ -31,7 +86,7 @@ final class LocaleTest extends TestCase {
 
 		$path->expects($this->any())
 			->method('getConfigurationsPath')
-			->willReturn(__DIR__ . '/config');
+			->willReturn(vfsStream::url('root/config'));
 
 		$request->expects($this->any())
 			->method('getRequestUri')
@@ -42,7 +97,6 @@ final class LocaleTest extends TestCase {
 			->with($this->equalTo('/a/long/path'));
 
 		$locale = new Locale($path, $request);
-		$locale->readConfigurations();
 		$locale->parseRequestLocale();
 
 		$this->assertSame('zh', $locale->getCurrentLocaleCode());
@@ -54,7 +108,7 @@ final class LocaleTest extends TestCase {
 
 		$path->expects($this->any())
 			->method('getConfigurationsPath')
-			->willReturn(__DIR__ . '/config');
+			->willReturn(vfsStream::url('root/config'));
 
 		$request->expects($this->any())
 			->method('getRequestUri')
@@ -77,7 +131,7 @@ final class LocaleTest extends TestCase {
 
 		$path->expects($this->any())
 			->method('getConfigurationsPath')
-			->willReturn(__DIR__ . '/config');
+			->willReturn(vfsStream::url('root/config'));
 
 		$request->expects($this->any())
 			->method('getRequestUri')
@@ -100,7 +154,7 @@ final class LocaleTest extends TestCase {
 
 		$path->expects($this->any())
 			->method('getConfigurationsPath')
-			->willReturn(__DIR__ . '/config');
+			->willReturn(vfsStream::url('root/config'));
 
 		$request->expects($this->any())
 			->method('getRequestUri')
@@ -119,7 +173,7 @@ final class LocaleTest extends TestCase {
 
 		$path->expects($this->any())
 			->method('getConfigurationsPath')
-			->willReturn(__DIR__ . '/config');
+			->willReturn(vfsStream::url('root/config'));
 
 		$request->expects($this->any())
 			->method('getRequestUri')
@@ -138,7 +192,7 @@ final class LocaleTest extends TestCase {
 
 		$path->expects($this->any())
 			->method('getConfigurationsPath')
-			->willReturn(__DIR__ . '/config');
+			->willReturn(vfsStream::url('root/config'));
 
 		$request->expects($this->any())
 			->method('getRequestUri')

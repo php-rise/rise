@@ -47,6 +47,8 @@ class Dispatcher {
 		$this->response = $response;
 		$this->session = $session;
 		$this->dynamicFactory = $dynamicFactory;
+
+		$this->readConfigurations();
 	}
 
 	/**

@@ -2,56 +2,87 @@
 namespace Rise\Test;
 
 use PHPUnit\Framework\TestCase;
+use org\bovigo\vfs\vfsStream;
 use Rise\Path;
 use Rise\Router;
 use Rise\Http\Response;
 use Rise\Session;
 use Rise\Container\DynamicFactory;
-use Rise\Test\DispatcherTest\Dispatcher;
+use Rise\Dispatcher;
 
 final class DispatcherTest extends TestCase {
-	public function testConfig() {
+	private $root;
+
+	public function setUp() {
+		$dispatcherConfigContent = <<<EOD
+<?php
+/**
+ * Configurations of dispatcher.
+ *
+ * "handlerNamespace": Namespace of handlers.
+ */
+return [
+	'handlerNamespace' => 'App\Handlers',
+];
+EOD;
+		$this->root = vfsStream::setup('root', null, [
+			'config' => [
+				'dispatcher.php' => $dispatcherConfigContent
+			]
+		]);
+	}
+
+	public function testDispatchMatchedRoute() {
 		$path = $this->createMock(Path::class);
 		$router = $this->createMock(Router::class);
 		$response = $this->createMock(Response::class);
 		$session = $this->createMock(Session::class);
 		$dynamicFactory = $this->createMock(DynamicFactory::class);
+		$handler = $this->getMockBuilder(stdClass::class)
+			->setMethods(['index'])
+			->getMock();
 
 		$path->expects($this->any())
 			->method('getConfigurationsPath')
-			->willReturn(__DIR__ . '/config');
-
-		$dispatcher = new Dispatcher($path, $router, $response, $session, $dynamicFactory);
-		$dispatcher->readConfigurations();
-
-		$this->assertSame('App\Handlers', $dispatcher->getHandlerNamespace());
-	}
-
-	public function testMatchRoute() {
-		$path = $this->createMock(Path::class);
-		$router = $this->createMock(Router::class);
-		$response = $this->createMock(Response::class);
-		$session = $this->createMock(Session::class);
-		$dynamicFactory = $this->createMock(DynamicFactory::class);
+			->willReturn(vfsStream::url('root/config'));
 
 		$router->expects($this->once())
 			->method('match')
 			->willReturn(true);
 
+		$router->expects($this->once())
+			->method('getMatchedHandler')
+			->willReturn(['Home.index']);
+
 		$session->expects($this->once())
 			->method('clearFlash')
 			->will($this->returnSelf());
+
+		$dynamicFactory->expects($this->once())
+			->method('create')
+			->with($this->equalTo('App\Handlers\Home'))
+			->willReturn($handler);
+
+		$handler->expects($this->once())
+			->method('index');
 
 		$dispatcher = new Dispatcher($path, $router, $response, $session, $dynamicFactory);
 		$dispatcher->dispatch();
 	}
 
-	public function testNotMatchRoute() {
+	public function testDispatchUnmatchedRoute() {
 		$path = $this->createMock(Path::class);
 		$router = $this->createMock(Router::class);
 		$response = $this->createMock(Response::class);
 		$session = $this->createMock(Session::class);
 		$dynamicFactory = $this->createMock(DynamicFactory::class);
+		$notFoundHandler = $this->getMockBuilder(stdClass::class)
+			->setMethods(['displayErrorPage'])
+			->getMock();
+
+		$path->expects($this->any())
+			->method('getConfigurationsPath')
+			->willReturn(vfsStream::url('root/config'));
 
 		$router->expects($this->once())
 			->method('match')
@@ -60,6 +91,15 @@ final class DispatcherTest extends TestCase {
 		$router->expects($this->once())
 			->method('getMatchedStatus')
 			->willReturn(404);
+
+		$router->expects($this->once())
+			->method('getMatchedHandler')
+			->willReturn('NotFoundHandler.displayErrorPage');
+
+		$dynamicFactory->expects($this->once())
+			->method('create')
+			->with($this->equalTo('App\Handlers\NotFoundHandler'))
+			->willReturn($notFoundHandler);
 
 		$response->expects($this->once())
 			->method('setStatusCode')

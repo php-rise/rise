@@ -42,6 +42,8 @@ class Session {
 
 	public function __construct(Path $path) {
 		$this->path = $path;
+
+		$this->readConfigurations();
 	}
 
 	/**

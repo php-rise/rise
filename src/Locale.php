@@ -61,6 +61,8 @@ class Locale {
 	public function __construct(Path $path, Request $request) {
 		$this->path = $path;
 		$this->request = $request;
+
+		$this->readConfigurations();
 	}
 
 	/**

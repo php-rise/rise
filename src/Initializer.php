@@ -3,49 +3,18 @@ namespace Rise;
 
 class Initializer {
 	/**
+	 * @var \Rise\Container
+	 */
+	protected $container;
+
+	/**
 	 * @var \Rise\Path
 	 */
 	protected $path;
 
-	/**
-	 * @var \Rise\Database
-	 */
-	protected $database;
-
-	/**
-	 * @var \Rise\Session
-	 */
-	protected $session;
-
-	/**
-	 * @var \Rise\Locale
-	 */
-	protected $locale;
-
-	/**
-	 * @var \Rise\Router
-	 */
-	protected $router;
-
-	/**
-	 * @var \Rise\Dispatcher
-	 */
-	protected $dispatcher;
-
-	public function __construct(
-		Path $path,
-		Database $database,
-		Session $session,
-		Locale $locale,
-		Router $router,
-		Dispatcher $dispatcher
-	) {
+	public function __construct(Container $container, Path $path) {
+		$this->container = $container;
 		$this->path = $path;
-		$this->database = $database;
-		$this->session = $session;
-		$this->locale = $locale;
-		$this->router = $router;
-		$this->dispatcher = $dispatcher;
 	}
 
 	/**
@@ -61,16 +30,9 @@ class Initializer {
 	 * @return self
 	 */
 	public function run() {
-		$this->database->readConfigurations();
-		$this->session->readConfigurations();
-		$this->locale->readConfigurations();
-		$this->router->readConfigurations();
-		$this->dispatcher->readConfigurations();
-
-		$this->locale->parseRequestLocale();
-		$this->router->buildRoutes();
-		$this->dispatcher->dispatch();
-
+		$this->container->get(Locale::class)->parseRequestLocale();
+		$this->container->get(Router::class)->buildRoutes();
+		$this->container->get(Dispatcher::class)->dispatch();
 		return $this;
 	}
 }

@@ -2,39 +2,58 @@
 namespace Rise\Test;
 
 use PHPUnit\Framework\TestCase;
+use org\bovigo\vfs\vfsStream;
+use Rise\Router;
 use Rise\Router\RoutingEngine;
 use Rise\Router\ScopeFactory;
 use Rise\Router\Scope;
 use Rise\Path;
 use Rise\Http\Request;
 use Rise\Locale;
-use Rise\Test\RouterTest\Router;
 
 final class RouterTest extends TestCase {
+	private $root;
+
 	public function setUp() {
 		$_SERVER['HTTP_HOST'] = 'www.example.com';
+
+		$routerConfigContent = <<<EOD
+<?php
+/**
+ * Configurations of router.
+ *
+ * "routesFile": Location of the routes file relative to the project root.
+ *
+ * "notFoundHandler": Handler for handling not found route.
+ */
+return [
+	'routesFile' => 'config/routes.php',
+	'notFoundHandler' => 'Errors\\NotFound.showHtml',
+];
+EOD;
+
+		$routesContent = <<<EOD
+<?php
+/**
+ * @var \\Rise\\Router\\Scope \$scope
+ */
+\$scope->createScope(function(\$scope) {
+	\$scope->get('', 'Home.index', 'root');
+	\$scope->get('contact', 'Contact.index', 'contact');
+	\$scope->get('products/{id}', 'Product.show', 'productDetail');
+});
+EOD;
+
+		$this->root = vfsStream::setup('root', null, [
+			'config' => [
+				'router.php' => $routerConfigContent,
+				'routes.php' => $routesContent,
+			]
+		]);
 	}
 
-	public function testConfig() {
-		$routingEngine = $this->createMock(RoutingEngine::class);
-		$scopeFactory = $this->createMock(ScopeFactory::class);
-		$path = $this->createMock(Path::class);
-		$request = $this->createMock(Request::class);
-		$locale = $this->createMock(Locale::class);
-
-		$path->expects($this->any())
-			->method('getProjectRootPath')
-			->willReturn(__DIR__);
-
-		$path->expects($this->any())
-			->method('getConfigurationsPath')
-			->willReturn(__DIR__ . '/config');
-
-		$router = new Router($routingEngine, $scopeFactory, $path, $request, $locale);
-		$router->readConfigurations();
-
-		$this->assertSame(__DIR__ . '/config/routes.php', $router->getRoutesFile());
-		$this->assertSame('Errors\NotFound.html', $router->getNotFoundHandler());
+	public function tearDown() {
+		unset($_SERVER['HTTP_HOST']);
 	}
 
 	public function testMatch() {
@@ -43,6 +62,14 @@ final class RouterTest extends TestCase {
 		$path = $this->createMock(Path::class);
 		$request = $this->createMock(Request::class);
 		$locale = $this->createMock(Locale::class);
+
+		$path->expects($this->any())
+			->method('getProjectRootPath')
+			->willReturn(vfsStream::url('root'));
+
+		$path->expects($this->any())
+			->method('getConfigurationsPath')
+			->willReturn(vfsStream::url('root/config'));
 
 		$routingEngine->expects($this->once())
 			->method('dispatch')
@@ -72,6 +99,14 @@ final class RouterTest extends TestCase {
 		$request = $this->createMock(Request::class);
 		$locale = $this->createMock(Locale::class);
 
+		$path->expects($this->any())
+			->method('getProjectRootPath')
+			->willReturn(vfsStream::url('root'));
+
+		$path->expects($this->any())
+			->method('getConfigurationsPath')
+			->willReturn(vfsStream::url('root/config'));
+
 		$routingEngine->expects($this->once())
 			->method('dispatch')
 			->willReturn([
@@ -80,21 +115,12 @@ final class RouterTest extends TestCase {
 				],
 			]);
 
-		$path->expects($this->any())
-			->method('getProjectRootPath')
-			->willReturn(__DIR__);
-
-		$path->expects($this->any())
-			->method('getConfigurationsPath')
-			->willReturn(__DIR__ . '/config');
-
 		$router = new Router($routingEngine, $scopeFactory, $path, $request, $locale);
-		$router->readConfigurations();
 		$matched = $router->match();
 
 		$this->assertFalse($matched);
 		$this->assertSame(404, $router->getMatchedStatus());
-		$this->assertSame('Errors\NotFound.html', $router->getMatchedHandler());
+		$this->assertSame('Errors\NotFound.showHtml', $router->getMatchedHandler());
 	}
 
 	public function testGeneratePathWithLocale() {
@@ -103,6 +129,14 @@ final class RouterTest extends TestCase {
 		$path = $this->createMock(Path::class);
 		$request = $this->createMock(Request::class);
 		$locale = $this->createMock(Locale::class);
+
+		$path->expects($this->any())
+			->method('getProjectRootPath')
+			->willReturn(vfsStream::url('root'));
+
+		$path->expects($this->any())
+			->method('getConfigurationsPath')
+			->willReturn(vfsStream::url('root/config'));
 
 		$routingEngine->expects($this->once())
 			->method('generatePath')
@@ -123,6 +157,14 @@ final class RouterTest extends TestCase {
 		$path = $this->createMock(Path::class);
 		$request = $this->createMock(Request::class);
 		$locale = $this->createMock(Locale::class);
+
+		$path->expects($this->any())
+			->method('getProjectRootPath')
+			->willReturn(vfsStream::url('root'));
+
+		$path->expects($this->any())
+			->method('getConfigurationsPath')
+			->willReturn(vfsStream::url('root/config'));
 
 		$routingEngine->expects($this->once())
 			->method('generatePath')

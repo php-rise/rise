@@ -67,6 +67,8 @@ class Router {
 		$this->path = $path;
 		$this->request = $request;
 		$this->locale = $locale;
+
+		$this->readConfigurations();
 	}
 
 	/**
