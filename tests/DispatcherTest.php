@@ -7,7 +7,7 @@ use Rise\Path;
 use Rise\Router;
 use Rise\Http\Response;
 use Rise\Session;
-use Rise\Container\DynamicFactory;
+use Rise\Dispatcher\HandlerFactory;
 use Rise\Dispatcher;
 
 final class DispatcherTest extends TestCase {
@@ -37,7 +37,7 @@ EOD;
 		$router = $this->createMock(Router::class);
 		$response = $this->createMock(Response::class);
 		$session = $this->createMock(Session::class);
-		$dynamicFactory = $this->createMock(DynamicFactory::class);
+		$handlerFactory = $this->createMock(HandlerFactory::class);
 		$handler = $this->getMockBuilder(stdClass::class)
 			->setMethods(['index'])
 			->getMock();
@@ -58,15 +58,15 @@ EOD;
 			->method('clearFlash')
 			->will($this->returnSelf());
 
-		$dynamicFactory->expects($this->once())
+		$handlerFactory->expects($this->once())
 			->method('create')
-			->with($this->equalTo('App\Handlers\Home'))
-			->willReturn($handler);
+			->with($this->equalTo('App\Handlers\Home'), 'index')
+			->willReturn([$handler, []]);
 
 		$handler->expects($this->once())
 			->method('index');
 
-		$dispatcher = new Dispatcher($path, $router, $response, $session, $dynamicFactory);
+		$dispatcher = new Dispatcher($path, $router, $response, $session, $handlerFactory);
 		$dispatcher->dispatch();
 	}
 
@@ -75,7 +75,7 @@ EOD;
 		$router = $this->createMock(Router::class);
 		$response = $this->createMock(Response::class);
 		$session = $this->createMock(Session::class);
-		$dynamicFactory = $this->createMock(DynamicFactory::class);
+		$handlerFactory = $this->createMock(HandlerFactory::class);
 		$notFoundHandler = $this->getMockBuilder(stdClass::class)
 			->setMethods(['displayErrorPage'])
 			->getMock();
@@ -96,17 +96,17 @@ EOD;
 			->method('getMatchedHandler')
 			->willReturn('NotFoundHandler.displayErrorPage');
 
-		$dynamicFactory->expects($this->once())
+		$handlerFactory->expects($this->once())
 			->method('create')
-			->with($this->equalTo('App\Handlers\NotFoundHandler'))
-			->willReturn($notFoundHandler);
+			->with($this->equalTo('App\Handlers\NotFoundHandler'), 'displayErrorPage')
+			->willReturn([$notFoundHandler, []]);
 
 		$response->expects($this->once())
 			->method('setStatusCode')
 			->with($this->equalTo(404))
 			->will($this->returnSelf());
 
-		$dispatcher = new Dispatcher($path, $router, $response, $session, $dynamicFactory);
+		$dispatcher = new Dispatcher($path, $router, $response, $session, $handlerFactory);
 		$dispatcher->dispatch();
 	}
 }

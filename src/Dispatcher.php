@@ -2,7 +2,7 @@
 namespace Rise;
 
 use Rise\Http\Response;
-use Rise\Container\DynamicFactory;
+use Rise\Dispatcher\HandlerFactory;
 
 class Dispatcher {
 	/**
@@ -31,22 +31,22 @@ class Dispatcher {
 	protected $session;
 
 	/**
-	 * @var \Rise\Factories\Container\DynamicFactory
+	 * @var \Rise\Dispatcher\HandlerFactory
 	 */
-	protected $dynamicFactory;
+	protected $handlerFactory;
 
 	public function __construct(
 		Path $path,
 		Router $router,
 		Response $response,
 		Session $session,
-		DynamicFactory $dynamicFactory
+		HandlerFactory $handlerFactory
 	) {
 		$this->path = $path;
 		$this->router = $router;
 		$this->response = $response;
 		$this->session = $session;
-		$this->dynamicFactory = $dynamicFactory;
+		$this->handlerFactory = $handlerFactory;
 
 		$this->readConfigurations();
 	}
@@ -99,10 +99,10 @@ class Dispatcher {
 	 */
 	protected function getHandlerResult($handler) {
 		if (is_string($handler)) {
-			list($class, $method) = explode('.', $handler, 2);
+			list ($class, $method) = explode('.', $handler, 2);
 			$class = $this->handlerNamespace . '\\' . $class;
-			$instance = $this->dynamicFactory->create($class);
-			return !($instance->{$method}() === false);
+			list ($instance, $args) = $this->handlerFactory->create($class, $method);
+			return !($instance->{$method}(...$args) === false);
 		}
 		if (is_array($handler)) {
 			$handlers = $handler;
