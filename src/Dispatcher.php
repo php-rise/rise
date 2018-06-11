@@ -78,7 +78,9 @@ class Dispatcher {
 		if ($this->router->match()) {
 			$this->session->toggleCurrentFlashBagKey();
 			$this->getHandlerResult($this->router->getMatchedHandler());
-			$this->response->send();
+			$this->response
+				->setStatusCode($this->router->getMatchedStatus())
+				->send();
 			$this->session->clearFlash()
 				->rememberCsrfToken();
 		} else {

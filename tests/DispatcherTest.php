@@ -51,6 +51,10 @@ EOD;
 			->willReturn(true);
 
 		$router->expects($this->once())
+			->method('getMatchedStatus')
+			->willReturn(200);
+
+		$router->expects($this->once())
 			->method('getMatchedHandler')
 			->willReturn(['Home.index']);
 
@@ -65,6 +69,15 @@ EOD;
 
 		$handler->expects($this->once())
 			->method('index');
+
+		$response->expects($this->once())
+			->method('setStatusCode')
+			->with($this->equalTo(200))
+			->will($this->returnSelf());
+
+		$response->expects($this->once())
+			->method('send')
+			->will($this->returnSelf());
 
 		$dispatcher = new Dispatcher($path, $router, $response, $session, $handlerFactory);
 		$dispatcher->dispatch();
@@ -104,6 +117,10 @@ EOD;
 		$response->expects($this->once())
 			->method('setStatusCode')
 			->with($this->equalTo(404))
+			->will($this->returnSelf());
+
+		$response->expects($this->once())
+			->method('send')
 			->will($this->returnSelf());
 
 		$dispatcher = new Dispatcher($path, $router, $response, $session, $handlerFactory);
