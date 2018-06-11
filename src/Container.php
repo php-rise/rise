@@ -61,9 +61,10 @@ class Container {
 	 * Resolve a class.
 	 *
 	 * @param string $class
-	 * @return object
+	 * @param string $method Optional
+	 * @return object|array
 	 */
-	public function get($class) {
+	public function get($class, $method = null) {
 		if (isset($this->aliases[$class])) {
 			$class = $this->aliases[$class];
 		}
@@ -72,16 +73,17 @@ class Container {
 			return $this->getFactory($class);
 		}
 
-		return $this->getSingleton($class);
+		return $this->getSingleton($class, $method);
 	}
 
 	/**
 	 * Construct an new instance of a class with its dependencies.
 	 *
 	 * @param string $class
-	 * @return object
+	 * @param string $method Optional
+	 * @return object|array
 	 */
-	public function getNewInstance($class) {
+	public function getNewInstance($class, $method = null) {
 		try {
 			$reflectionClass = new ReflectionClass($class);
 		} catch (ReflectionException $e) {
@@ -91,38 +93,55 @@ class Container {
 		$constructor = $reflectionClass->getConstructor();
 
 		if (is_null($constructor)) {
-			return new $class;
-		}
+			$instance = new $class;
+		} else {
+			$args = [];
 
-		$args = [];
-
-		try {
-			foreach ($constructor->getParameters() as $param) {
-				$paramClassName = $param->getClass()->getName();
-				array_push($args, $this->get($paramClassName));
+			try {
+				foreach ($constructor->getParameters() as $param) {
+					$paramClassName = $param->getClass()->getName();
+					array_push($args, $this->get($paramClassName));
+				}
+			} catch (ReflectionException $e) {
+				$paramClassName = (string)$param->getType();
+				throw new NotFoundException("Parameter class $paramClassName not found when constructing $class");
 			}
-		} catch (ReflectionException $e) {
-			$paramClassName = (string)$param->getType();
-			throw new NotFoundException("Parameter class $paramClassName not found when constructing $class");
+
+			$instance = new $class(...$args);
 		}
 
-		return new $class(...$args);
+		if ($method) {
+			return [$instance, $this->resolveMethodArgs($class, $method, $reflectionClass)];
+		}
+
+		return $instance;
 	}
 
 	/**
 	 * Get singleton of a class.
 	 *
 	 * @param string $class
-	 * @return object
+	 * @param string $method Optional
+	 * @return object|array
 	 */
-	protected function getSingleton($class) {
+	protected function getSingleton($class, $method = null) {
 		if (isset($this->singletons[$class])) {
-			return $this->singletons[$class];
+			if ($method) {
+				return [$this->singletons[$class], $this->resolveMethodArgs($class, $method)];
+			} else {
+				return $this->singletons[$class];
+			}
 		}
 
-		$instance = $this->getNewInstance($class);
-		$this->singletons[$class] = $instance;
-		return $instance;
+		if ($method) {
+			list ($instance, $methodArgs) = $this->getNewInstance($class, $method);
+			$this->singletons[$class] = $instance;
+			return [$instance, $methodArgs];
+		} else {
+			$instance = $this->getNewInstance($class);
+			$this->singletons[$class] = $instance;
+			return $instance;
+		}
 	}
 
 	/**
@@ -139,5 +158,43 @@ class Container {
 		$factory = new $class($this);
 		$this->factories[$class] = $factory;
 		return $factory;
+	}
+
+	/**
+	 * Resolve method parameters for method injection.
+	 *
+	 * @var param string $className
+	 * @param string $methodName
+	 * @param \ReflectionClass $reflectionClass Optional
+	 * @return array
+	 */
+	protected function resolveMethodArgs($className, $methodName, $reflectionClass = null) {
+		if (!$reflectionClass) {
+			try {
+				$reflectionClass = new ReflectionClass($className);
+			} catch (ReflectionException $e) {
+				throw new NotFoundException("Class $className not found");
+			}
+		}
+
+		try {
+			$method = $reflectionClass->getMethod($methodName);
+		} catch (ReflectionException $e) {
+			throw new NotFoundException("Method $className->$methodName not found");
+		}
+
+		$args = [];
+
+		try {
+			foreach ($method->getParameters() as $param) {
+				$paramClassName = $param->getClass()->getName();
+				array_push($args, $this->get($paramClassName));
+			}
+		} catch (ReflectionException $e) {
+			$paramClassName = (string)$param->getType();
+			throw new NotFoundException("Parameter class $paramClassName not found when resolving method $className->$methodName");
+		}
+
+		return $args;
 	}
 }

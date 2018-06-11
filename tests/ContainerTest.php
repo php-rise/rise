@@ -8,10 +8,13 @@ use Rise\Test\ContainerTest\Singleton;
 use Rise\Test\ContainerTest\Factory;
 use Rise\Test\ContainerTest\DependencyA;
 use Rise\Test\ContainerTest\DependencyB;
+use Rise\Test\ContainerTest\DependencyC;
 use Rise\Test\ContainerTest\AutoWired;
 use Rise\Test\ContainerTest\MissingDependency;
 use Rise\Test\ContainerTest\BaseBinding;
 use Rise\Test\ContainerTest\AliasBinding;
+use Rise\Test\ContainerTest\MethodInjectionWithConstructor;
+use Rise\Test\ContainerTest\MethodInjectionWithoutConstructor;
 
 final class ContainerTest extends TestCase {
 	public function testSingleton() {
@@ -60,5 +63,36 @@ final class ContainerTest extends TestCase {
 		$container->bind(BaseBinding::class, AliasBinding::class);
 		$aliasBinding = $container->get(BaseBinding::class);
 		$this->assertInstanceOf(AliasBinding::class, $aliasBinding);
+	}
+
+	public function testMethodInjectionWithConstructor() {
+		$container = new Container();
+
+		$results = $container->get(MethodInjectionWithConstructor::class, 'injectB');
+		$this->assertTrue(is_array($results));
+		list ($instance1, $args) = $results;
+		$this->assertInstanceOf(DependencyA::class, $instance1->a);
+		$this->assertInstanceOf(DependencyB::class, $args[0]);
+
+		$results = $container->get(MethodInjectionWithConstructor::class, 'injectC');
+		$this->assertTrue(is_array($results));
+		list ($instance2, $args) = $results;
+		$this->assertSame($instance1, $instance2);
+		$this->assertInstanceOf(DependencyC::class, $args[0]);
+	}
+
+	public function testMethodInjectionWithoutConstructor() {
+		$container = new Container();
+
+		$results = $container->get(MethodInjectionWithoutConstructor::class, 'injectB');
+		$this->assertTrue(is_array($results));
+		list ($instance1, $args) = $results;
+		$this->assertInstanceOf(DependencyB::class, $args[0]);
+
+		$results = $container->get(MethodInjectionWithoutConstructor::class, 'injectC');
+		$this->assertTrue(is_array($results));
+		list ($instance2, $args) = $results;
+		$this->assertSame($instance1, $instance2);
+		$this->assertInstanceOf(DependencyC::class, $args[0]);
 	}
 }
