@@ -57,38 +57,22 @@ class Command {
 	}
 
 	/**
-	 * @return self
-	 */
-	public function run() {
-		$this->readConfigurations();
-		$this->execute($this->arguments);
-		return $this;
-	}
-
-	/**
 	 * @param string[] $argv
 	 * @return self
 	 */
 	public function setArgv($argv) {
 		$argvClone = $argv;
 		array_shift($argvClone);
-		$this->setArguments($argvClone);
+		$this->arguments = $argvClone;
 		return $this;
 	}
 
 	/**
-	 * @return string[]
-	 */
-	public function getArguments() {
-		return $this->arguments;
-	}
-
-	/**
-	 * @param string[] $argv
 	 * @return self
 	 */
-	public function setArguments($arguments) {
-		$this->arguments = $arguments;
+	public function run() {
+		$this->readConfigurations();
+		$this->execute($this->arguments);
 		return $this;
 	}
 
