@@ -1,9 +1,8 @@
 <?php
 namespace Rise\Test;
 
+use Closure;
 use PHPUnit\Framework\TestCase;
-use org\bovigo\vfs\vfsStream;
-use Rise\Path;
 use Rise\Router;
 use Rise\Http\Response;
 use Rise\Session;
@@ -11,40 +10,19 @@ use Rise\Dispatcher\HandlerFactory;
 use Rise\Dispatcher;
 
 final class DispatcherTest extends TestCase {
-	private $root;
-
-	public function setUp() {
-		$dispatcherConfigContent = <<<EOD
-<?php
-/**
- * Configurations of dispatcher.
- *
- * "handlerNamespace": Namespace of handlers.
- */
-return [
-	'handlerNamespace' => 'App\Handlers',
-];
-EOD;
-		$this->root = vfsStream::setup('root', null, [
-			'config' => [
-				'dispatcher.php' => $dispatcherConfigContent
-			]
-		]);
-	}
-
 	public function testDispatchMatchedRoute() {
-		$path = $this->createMock(Path::class);
 		$router = $this->createMock(Router::class);
 		$response = $this->createMock(Response::class);
 		$session = $this->createMock(Session::class);
 		$handlerFactory = $this->createMock(HandlerFactory::class);
-		$handler = $this->getMockBuilder(stdClass::class)
+		$sessionMiddleware = $this->getMockBuilder(stdClass::class)
+			->setMethods(['setup'])
+			->getMock();
+		$homeHandler = $this->getMockBuilder(stdClass::class)
 			->setMethods(['index'])
 			->getMock();
-
-		$path->expects($this->any())
-			->method('getConfigurationsPath')
-			->willReturn(vfsStream::url('root/config'));
+		$sessionMiddlewareSetupNext = ''; // Reference of next middleware
+		$homeHandlerIndexNext = ''; // Reference of next middleware
 
 		$router->expects($this->once())
 			->method('match')
@@ -56,19 +34,50 @@ EOD;
 
 		$router->expects($this->once())
 			->method('getMatchedHandler')
-			->willReturn(['Home.index']);
+			->willReturn(['App\Middlewares\Session.setup', 'App\Handlers\Home.index']);
 
 		$session->expects($this->once())
 			->method('clearFlash')
 			->will($this->returnSelf());
 
-		$handlerFactory->expects($this->once())
+		$handlerFactory->expects($this->exactly(2))
 			->method('create')
-			->with($this->equalTo('App\Handlers\Home'), 'index')
-			->willReturn([$handler, []]);
+			->withConsecutive(
+				[
+					$this->equalTo('App\Middlewares\Session'),
+					$this->equalTo('setup'),
+					$this->callback(function ($next) use (&$sessionMiddlewareSetupNext) {
+						$sessionMiddlewareSetupNext = $next;
+						return $next instanceof Closure;
+					})
+				],
+				[
+					$this->equalTo('App\Handlers\Home'),
+					$this->equalTo('index'),
+					$this->callback(function ($next) use (&$homeHandlerIndexNext) {
+						$homeHandlerIndexNext = $next;
+						return $next instanceof Closure;
+					})
+				]
+			)
+			->will($this->onConsecutiveCalls(
+				[$sessionMiddleware, [&$sessionMiddlewareSetupNext]],
+				[$homeHandler, [&$homeHandlerIndexNext]]
+			));
 
-		$handler->expects($this->once())
-			->method('index');
+		$sessionMiddleware->expects($this->once())
+			->method('setup')
+			->with($this->callback(function ($next) {
+				$next();
+				return true;
+			}));
+
+		$homeHandler->expects($this->once())
+			->method('index')
+			->with($this->callback(function ($next) {
+				$next();
+				return true;
+			}));
 
 		$response->expects($this->once())
 			->method('setStatusCode')
@@ -79,12 +88,11 @@ EOD;
 			->method('send')
 			->will($this->returnSelf());
 
-		$dispatcher = new Dispatcher($path, $router, $response, $session, $handlerFactory);
+		$dispatcher = new Dispatcher($router, $response, $session, $handlerFactory);
 		$dispatcher->dispatch();
 	}
 
 	public function testDispatchUnmatchedRoute() {
-		$path = $this->createMock(Path::class);
 		$router = $this->createMock(Router::class);
 		$response = $this->createMock(Response::class);
 		$session = $this->createMock(Session::class);
@@ -92,10 +100,6 @@ EOD;
 		$notFoundHandler = $this->getMockBuilder(stdClass::class)
 			->setMethods(['displayErrorPage'])
 			->getMock();
-
-		$path->expects($this->any())
-			->method('getConfigurationsPath')
-			->willReturn(vfsStream::url('root/config'));
 
 		$router->expects($this->once())
 			->method('match')
@@ -107,7 +111,7 @@ EOD;
 
 		$router->expects($this->once())
 			->method('getMatchedHandler')
-			->willReturn('NotFoundHandler.displayErrorPage');
+			->willReturn('App\Handlers\NotFoundHandler.displayErrorPage');
 
 		$handlerFactory->expects($this->once())
 			->method('create')
@@ -123,7 +127,7 @@ EOD;
 			->method('send')
 			->will($this->returnSelf());
 
-		$dispatcher = new Dispatcher($path, $router, $response, $session, $handlerFactory);
+		$dispatcher = new Dispatcher($router, $response, $session, $handlerFactory);
 		$dispatcher->dispatch();
 	}
 }

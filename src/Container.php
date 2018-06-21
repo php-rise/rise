@@ -210,7 +210,7 @@ class Container {
 					throw new NotAllowedException("Parameter type \"$paramType\" is not allowed" . $errorMessageSuffix);
 				}
 				$paramClassName = $param->getClass()->getName();
-				if (array_key_exists($paramClassName, $extraMappings)) {
+				if (is_array($extraMappings) && array_key_exists($paramClassName, $extraMappings)) {
 					array_push($args, $extraMappings[$paramClassName]);
 				} else {
 					array_push($args, $this->get($paramClassName));

@@ -6,14 +6,9 @@ use Rise\Dispatcher\HandlerFactory;
 
 class Dispatcher {
 	/**
-	 * @var string
+	 * @var array
 	 */
-	protected $handlerNamespace = '';
-
-	/**
-	 * @var \Rise\Path
-	 */
-	protected $path;
+	protected $handlers = [];
 
 	/**
 	 * @var \Rise\Router
@@ -36,37 +31,15 @@ class Dispatcher {
 	protected $handlerFactory;
 
 	public function __construct(
-		Path $path,
 		Router $router,
 		Response $response,
 		Session $session,
 		HandlerFactory $handlerFactory
 	) {
-		$this->path = $path;
 		$this->router = $router;
 		$this->response = $response;
 		$this->session = $session;
 		$this->handlerFactory = $handlerFactory;
-
-		$this->readConfigurations();
-	}
-
-	/**
-	 * @param string $handlerNamespace
-	 * @return self
-	 */
-	public function setHandlerNamespace($handlerNamespace) {
-		$this->handlerNamespace = $handlerNamespace;
-		return $this;
-	}
-
-	/**
-	 * @return self
-	 */
-	public function readConfigurations() {
-		$configurations = require($this->path->getConfigurationsPath() . '/dispatcher.php');
-		$this->setHandlerNamespace($configurations['handlerNamespace']);
-		return $this;
 	}
 
 	/**
@@ -77,17 +50,16 @@ class Dispatcher {
 	public function dispatch() {
 		if ($this->router->match()) {
 			$this->session->toggleCurrentFlashBagKey();
-			$this->getHandlerResult($this->router->getMatchedHandler());
+			$this->setHandlers($this->router->getMatchedHandler());
+			$this->runHandlers();
 			$this->response
 				->setStatusCode($this->router->getMatchedStatus())
 				->send();
 			$this->session->clearFlash()
 				->rememberCsrfToken();
 		} else {
-			$matchedHandler = $this->router->getMatchedHandler();
-			if ($matchedHandler) {
-				$this->getHandlerResult($matchedHandler);
-			}
+			$this->setHandlers($this->router->getMatchedHandler());
+			$this->runHandlers();
 			$this->response
 				->setStatusCode($this->router->getMatchedStatus())
 				->send();
@@ -96,24 +68,49 @@ class Dispatcher {
 	}
 
 	/**
-	 * @param string|array $handler
-	 * @param bool
+	 * @param string|array $handlers
 	 */
-	protected function getHandlerResult($handler) {
-		if (is_string($handler)) {
-			list ($class, $method) = explode('.', $handler, 2);
-			$class = $this->handlerNamespace . '\\' . $class;
-			list ($instance, $args) = $this->handlerFactory->create($class, $method);
-			return !($instance->{$method}(...$args) === false);
+	protected function setHandlers($handlers) {
+		if (is_array($handlers)) {
+			$this->handlers = $handlers;
+		} else if (is_string($handlers)) {
+			$this->handlers = [$handlers];
 		}
-		if (is_array($handler)) {
-			$handlers = $handler;
-			foreach ($handlers as $handler) {
-				if ($this->getHandlerResult($handler) === false) {
-					return false;
-				}
-			}
-			return true;
+	}
+
+	protected function runHandlers() {
+		$handler = current($this->handlers);
+		if (!$handler) {
+			return;
 		}
+
+		list($instance, $method, $args) = $this->resolveHandler($handler);
+		$instance->{$method}(...$args);
+	}
+
+	/**
+	 * @param string $handler
+	 * @return array
+	 */
+	private function resolveHandler($handler) {
+		list ($class, $method) = explode('.', $handler, 2);
+		$next = $this->getNext();
+		list ($instance, $args) = $this->handlerFactory->create($class, $method, $next);
+		return [$instance, $method, $args];
+	}
+
+	/**
+	 * @return \Closure
+	 */
+	private function getNext() {
+		$handler = next($this->handlers);
+		if (!$handler) {
+			return function () {}; // Return a dummy middleware
+		}
+
+		return function () use ($handler) {
+			list ($instance, $method, $args) = $this->resolveHandler($handler);
+			return $instance->{$method}(...$args);
+		};
 	}
 }
