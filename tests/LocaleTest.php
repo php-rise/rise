@@ -85,7 +85,7 @@ EOD;
 		$request = $this->createMock(Request::class);
 
 		$path->expects($this->any())
-			->method('getConfigurationsPath')
+			->method('getConfigPath')
 			->willReturn(vfsStream::url('root/config'));
 
 		$request->expects($this->any())
@@ -107,7 +107,7 @@ EOD;
 		$request = $this->createMock(Request::class);
 
 		$path->expects($this->any())
-			->method('getConfigurationsPath')
+			->method('getConfigPath')
 			->willReturn(vfsStream::url('root/config'));
 
 		$request->expects($this->any())
@@ -130,7 +130,7 @@ EOD;
 		$request = $this->createMock(Request::class);
 
 		$path->expects($this->any())
-			->method('getConfigurationsPath')
+			->method('getConfigPath')
 			->willReturn(vfsStream::url('root/config'));
 
 		$request->expects($this->any())
@@ -153,7 +153,7 @@ EOD;
 		$request = $this->createMock(Request::class);
 
 		$path->expects($this->any())
-			->method('getConfigurationsPath')
+			->method('getConfigPath')
 			->willReturn(vfsStream::url('root/config'));
 
 		$request->expects($this->any())
@@ -172,7 +172,7 @@ EOD;
 		$request = $this->createMock(Request::class);
 
 		$path->expects($this->any())
-			->method('getConfigurationsPath')
+			->method('getConfigPath')
 			->willReturn(vfsStream::url('root/config'));
 
 		$request->expects($this->any())
@@ -191,7 +191,7 @@ EOD;
 		$request = $this->createMock(Request::class);
 
 		$path->expects($this->any())
-			->method('getConfigurationsPath')
+			->method('getConfigPath')
 			->willReturn(vfsStream::url('root/config'));
 
 		$request->expects($this->any())

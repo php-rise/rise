@@ -75,7 +75,7 @@ class Router {
 	 * @return self
 	 */
 	public function readConfigurations() {
-		$configurations = require($this->path->getConfigurationsPath() . '/router.php');
+		$configurations = require($this->path->getConfigPath() . '/router.php');
 		$this->routesFile = $this->path->getProjectRootPath() . '/' . $configurations['routesFile'];
 		if (isset($configurations['notFoundHandler'])) {
 			$this->notFoundHandler = $configurations['notFoundHandler'];

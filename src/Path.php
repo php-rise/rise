@@ -14,7 +14,7 @@ class Path {
 	 *
 	 * @var string
 	 */
-	protected $configurationsPath;
+	protected $configPath;
 
 	/**
 	 * Path of the public directory.
@@ -64,8 +64,7 @@ class Path {
 	 */
 	public function setProjectRootPath($projectRootPath) {
 		$this->projectRootPath = realpath($projectRootPath);
-		$this->configurationsPath = $this->projectRootPath . '/config';
-
+		$this->configPath = $this->projectRootPath . '/config';
 		$this->publicPath = $this->projectRootPath . '/public';
 		$this->logsPath = $this->projectRootPath . '/logs';
 		$this->templatesPath = $this->projectRootPath . '/templates';
@@ -75,8 +74,8 @@ class Path {
 		return $this;
 	}
 
-	public function getConfigurationsPath() {
-		return $this->configurationsPath;
+	public function getConfigPath() {
+		return $this->configPath;
 	}
 
 	public function getPublicPath() {

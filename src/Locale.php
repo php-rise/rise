@@ -131,7 +131,7 @@ class Locale {
 	 * @return self
 	 */
 	public function readConfigurations() {
-		$file = $this->path->getConfigurationsPath() . '/locale.php';
+		$file = $this->path->getConfigPath() . '/locale.php';
 		if (file_exists($file)) {
 			$configurations = require($file);
 			if (isset($configurations['locales'])) {

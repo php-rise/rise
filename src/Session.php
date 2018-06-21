@@ -52,7 +52,7 @@ class Session {
 	 * @return self
 	 */
 	public function readConfigurations() {
-		$file = $this->path->getConfigurationsPath() . '/session.php';
+		$file = $this->path->getConfigPath() . '/session.php';
 		if (file_exists($file)) {
 			$configurations = require($file);
 			if (isset($configurations['sessionName'])) {

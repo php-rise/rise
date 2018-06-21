@@ -69,7 +69,7 @@ EOD;
 			->willReturn(vfsStream::url('root'));
 
 		$path->expects($this->any())
-			->method('getConfigurationsPath')
+			->method('getConfigPath')
 			->willReturn(vfsStream::url('root/config'));
 
 		$routingEngine->expects($this->once())
@@ -105,7 +105,7 @@ EOD;
 			->willReturn(vfsStream::url('root'));
 
 		$path->expects($this->any())
-			->method('getConfigurationsPath')
+			->method('getConfigPath')
 			->willReturn(vfsStream::url('root/config'));
 
 		$routingEngine->expects($this->once())
@@ -136,7 +136,7 @@ EOD;
 			->willReturn(vfsStream::url('root'));
 
 		$path->expects($this->any())
-			->method('getConfigurationsPath')
+			->method('getConfigPath')
 			->willReturn(vfsStream::url('root/config'));
 
 		$routingEngine->expects($this->once())
@@ -164,7 +164,7 @@ EOD;
 			->willReturn(vfsStream::url('root'));
 
 		$path->expects($this->any())
-			->method('getConfigurationsPath')
+			->method('getConfigPath')
 			->willReturn(vfsStream::url('root/config'));
 
 		$routingEngine->expects($this->once())

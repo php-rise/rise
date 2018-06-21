@@ -10,7 +10,7 @@ final class PathTest extends TestCase {
 		$projectRoot = __DIR__;
 		$path->setProjectRootPath($projectRoot);
 		$this->assertSame($projectRoot, $path->getProjectRootPath());
-		$this->assertSame($projectRoot . '/config', $path->getConfigurationsPath());
+		$this->assertSame($projectRoot . '/config', $path->getConfigPath());
 		$this->assertSame($projectRoot . '/public', $path->getPublicPath());
 		$this->assertSame($projectRoot . '/logs', $path->getLogsPath());
 		$this->assertSame($projectRoot . '/templates', $path->getTemplatesPath());

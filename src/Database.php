@@ -53,7 +53,7 @@ class Database {
 	 * @return self
 	 */
 	public function readConfigurations() {
-		$configurationFile = $this->path->getConfigurationsPath() . '/database.php';
+		$configurationFile = $this->path->getConfigPath() . '/database.php';
 		if (file_exists($configurationFile)) {
 			$this->setConfigurations(require($configurationFile));
 		}

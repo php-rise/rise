@@ -120,7 +120,7 @@ class Command {
 	 * @return self
 	 */
 	protected function readConfigurations() {
-		$file = $this->path->getConfigurationsPath() . '/command.php';
+		$file = $this->path->getConfigPath() . '/command.php';
 		if (file_exists($file)) {
 			$configurations = require($file);
 			if (isset($configurations['namespaces'])) {
