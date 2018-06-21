@@ -4,6 +4,7 @@ namespace Rise;
 use ReflectionClass;
 use ReflectionException;
 use Rise\Container\NotFoundException;
+use Rise\Container\NotAllowedException;
 
 class Container {
 	/**
@@ -20,6 +21,11 @@ class Container {
 	 * @var array
 	 */
 	protected $factories = [];
+
+	/**
+	 * @var array
+	 */
+	protected $reflectionClasses = [];
 
 	public function __construct() {
 		$this->singletons['Rise\Container'] = $this;
@@ -43,7 +49,7 @@ class Container {
 	}
 
 	/**
-	 * Construct a factory instance and inject this container to the instance.
+	 * Register factory.
 	 *
 	 * @param string $factory
 	 * @param string $to Optional
@@ -61,10 +67,9 @@ class Container {
 	 * Resolve a class.
 	 *
 	 * @param string $class
-	 * @param string $method Optional
-	 * @return object|array
+	 * @return object
 	 */
-	public function get($class, $method = null) {
+	public function get($class) {
 		if (isset($this->aliases[$class])) {
 			$class = $this->aliases[$class];
 		}
@@ -73,45 +78,40 @@ class Container {
 			return $this->getFactory($class);
 		}
 
-		return $this->getSingleton($class, $method);
+		return $this->getSingleton($class);
+	}
+
+	/**
+	 * Resolve a method.
+	 *
+	 * @param string $class
+	 * @param string $method
+	 * @param array $extraMappings Optional
+	 * @return array
+	 */
+	public function getMethod($class, $method, $extraMappings = []) {
+		if (isset($this->aliases[$class])) {
+			$class = $this->aliases[$class];
+		}
+
+		return [$this->getSingleton($class), $this->getMethodArgs($class, $method, $extraMappings)];
 	}
 
 	/**
 	 * Construct an new instance of a class with its dependencies.
 	 *
 	 * @param string $class
-	 * @param string $method Optional
-	 * @return object|array
+	 * @return object
 	 */
-	public function getNewInstance($class, $method = null) {
-		try {
-			$reflectionClass = new ReflectionClass($class);
-		} catch (ReflectionException $e) {
-			throw new NotFoundException("Class $class not found");
-		}
-
+	public function getNewInstance($class) {
+		$reflectionClass = $this->getReflectionClass($class);
 		$constructor = $reflectionClass->getConstructor();
 
 		if (is_null($constructor)) {
 			$instance = new $class;
 		} else {
-			$args = [];
-
-			try {
-				foreach ($constructor->getParameters() as $param) {
-					$paramClassName = $param->getClass()->getName();
-					array_push($args, $this->get($paramClassName));
-				}
-			} catch (ReflectionException $e) {
-				$paramClassName = (string)$param->getType();
-				throw new NotFoundException("Parameter class $paramClassName not found when constructing $class");
-			}
-
+			$args = $this->resolveArgs($constructor, " when constructing $class");
 			$instance = new $class(...$args);
-		}
-
-		if ($method) {
-			return [$instance, $this->resolveMethodArgs($class, $method, $reflectionClass)];
 		}
 
 		return $instance;
@@ -124,28 +124,18 @@ class Container {
 	 * @param string $method Optional
 	 * @return object|array
 	 */
-	protected function getSingleton($class, $method = null) {
+	protected function getSingleton($class) {
 		if (isset($this->singletons[$class])) {
-			if ($method) {
-				return [$this->singletons[$class], $this->resolveMethodArgs($class, $method)];
-			} else {
-				return $this->singletons[$class];
-			}
+			return $this->singletons[$class];
 		}
 
-		if ($method) {
-			list ($instance, $methodArgs) = $this->getNewInstance($class, $method);
-			$this->singletons[$class] = $instance;
-			return [$instance, $methodArgs];
-		} else {
-			$instance = $this->getNewInstance($class);
-			$this->singletons[$class] = $instance;
-			return $instance;
-		}
+		$instance = $this->getNewInstance($class);
+		$this->singletons[$class] = $instance;
+		return $instance;
 	}
 
 	/**
-	 * Get a factory instance.
+	 * Construct a factory instance and inject this container to the instance.
 	 *
 	 * @param string $class
 	 * @return object
@@ -163,19 +153,14 @@ class Container {
 	/**
 	 * Resolve method parameters for method injection.
 	 *
-	 * @var param string $className
+	 * @param string $className
 	 * @param string $methodName
+	 * @param array $extraMappings Optional
 	 * @param \ReflectionClass $reflectionClass Optional
 	 * @return array
 	 */
-	protected function resolveMethodArgs($className, $methodName, $reflectionClass = null) {
-		if (!$reflectionClass) {
-			try {
-				$reflectionClass = new ReflectionClass($className);
-			} catch (ReflectionException $e) {
-				throw new NotFoundException("Class $className not found");
-			}
-		}
+	protected function getMethodArgs($className, $methodName, $extraMappings = []) {
+		$reflectionClass = $this->getReflectionClass($className);
 
 		try {
 			$method = $reflectionClass->getMethod($methodName);
@@ -183,16 +168,56 @@ class Container {
 			throw new NotFoundException("Method $className->$methodName not found");
 		}
 
+		return $this->resolveArgs($method, " when resolving method $className->$methodName", $extraMappings);
+	}
+
+	/**
+	 * Create and cache a ReflectionClass.
+	 *
+	 * @param string $className
+	 * @return \ReflectionClass
+	 */
+	protected function getReflectionClass($className) {
+		if (isset($this->reflectionClasses[$className])) {
+			return $this->reflectionClasses[$className];
+		}
+
+		try {
+			$reflectionClass = new ReflectionClass($className);
+			$this->reflectionClasses[$className] = $reflectionClass;
+		} catch (ReflectionException $e) {
+			throw new NotFoundException("Class $className is not found");
+		}
+
+		return $reflectionClass;
+	}
+
+	/**
+	 * Resolve parameters of ReflectionMethod.
+	 *
+	 * @param \ReflectionMethod $reflectionMethod
+	 * @param string $errorMessageSuffix Optional
+	 * @param array $extraMappings Optional
+	 * @return array
+	 */
+	protected function resolveArgs($reflectionMethod, $errorMessageSuffix = '', $extraMappings = []) {
 		$args = [];
 
 		try {
-			foreach ($method->getParameters() as $param) {
+			foreach ($reflectionMethod->getParameters() as $param) {
+				$paramType = $param->getType();
+				if ($paramType->isBuiltin()) {
+					throw new NotAllowedException("Parameter type \"$paramType\" is not allowed" . $errorMessageSuffix);
+				}
 				$paramClassName = $param->getClass()->getName();
-				array_push($args, $this->get($paramClassName));
+				if (array_key_exists($paramClassName, $extraMappings)) {
+					array_push($args, $extraMappings[$paramClassName]);
+				} else {
+					array_push($args, $this->get($paramClassName));
+				}
 			}
 		} catch (ReflectionException $e) {
-			$paramClassName = (string)$param->getType();
-			throw new NotFoundException("Parameter class $paramClassName not found when resolving method $className->$methodName");
+			throw new NotFoundException("Parameter class $paramType is not found" . $errorMessageSuffix);
 		}
 
 		return $args;

@@ -15,6 +15,7 @@ use Rise\Test\ContainerTest\BaseBinding;
 use Rise\Test\ContainerTest\AliasBinding;
 use Rise\Test\ContainerTest\MethodInjectionWithConstructor;
 use Rise\Test\ContainerTest\MethodInjectionWithoutConstructor;
+use Rise\Test\ContainerTest\MethodInjectionWithExtraMappings;
 
 final class ContainerTest extends TestCase {
 	public function testSingleton() {
@@ -68,13 +69,13 @@ final class ContainerTest extends TestCase {
 	public function testMethodInjectionWithConstructor() {
 		$container = new Container();
 
-		$results = $container->get(MethodInjectionWithConstructor::class, 'injectB');
+		$results = $container->getMethod(MethodInjectionWithConstructor::class, 'injectB');
 		$this->assertTrue(is_array($results));
 		list ($instance1, $args) = $results;
 		$this->assertInstanceOf(DependencyA::class, $instance1->a);
 		$this->assertInstanceOf(DependencyB::class, $args[0]);
 
-		$results = $container->get(MethodInjectionWithConstructor::class, 'injectC');
+		$results = $container->getMethod(MethodInjectionWithConstructor::class, 'injectC');
 		$this->assertTrue(is_array($results));
 		list ($instance2, $args) = $results;
 		$this->assertSame($instance1, $instance2);
@@ -84,15 +85,29 @@ final class ContainerTest extends TestCase {
 	public function testMethodInjectionWithoutConstructor() {
 		$container = new Container();
 
-		$results = $container->get(MethodInjectionWithoutConstructor::class, 'injectB');
+		$results = $container->getMethod(MethodInjectionWithoutConstructor::class, 'injectB');
 		$this->assertTrue(is_array($results));
 		list ($instance1, $args) = $results;
 		$this->assertInstanceOf(DependencyB::class, $args[0]);
 
-		$results = $container->get(MethodInjectionWithoutConstructor::class, 'injectC');
+		$results = $container->getMethod(MethodInjectionWithoutConstructor::class, 'injectC');
 		$this->assertTrue(is_array($results));
 		list ($instance2, $args) = $results;
 		$this->assertSame($instance1, $instance2);
 		$this->assertInstanceOf(DependencyC::class, $args[0]);
+	}
+
+	public function testMethodInjectionWithExtraMappings() {
+		$container = new Container();
+		$next = function () {};
+
+		list ($instance, $args) = $container->getMethod(
+			MethodInjectionWithExtraMappings::class,
+			'injectA',
+			['Closure' => $next]
+		);
+
+		$this->assertInstanceOf(DependencyA::class, $args[0]);
+		$this->assertSame($next, $args[1]);
 	}
 }
