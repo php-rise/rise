@@ -1,22 +1,22 @@
 <?php
 namespace Rise;
 
-use Doctrine\DBAL\DriverManager as DbalManager;
-use Doctrine\DBAL\Configuration as DbalConfiguration;
+use PDO;
 
 class Database {
 	/**
-	 * @var bool
+	 * @var string
 	 */
-	protected $initialized = false;
+	protected $defaultConfigName = '';
 
 	/**
 	 * @var array
 	 */
-	protected $configurations = [];
+	protected $connectionConfigs = [];
 
 	/**
-	 * @var \Doctrine\DBAL\Connection[]
+	 * Associated array of PDO instances
+	 * @var array
 	 */
 	protected $connections = [];
 
@@ -27,37 +27,69 @@ class Database {
 
 	public function __construct(Path $path) {
 		$this->path = $path;
-
-		$this->readConfigurations();
+		$this->readConfig();
 	}
 
 	/**
-	 * @return array
-	 */
-	public function getConfigurations() {
-		return $this->configurations;
-	}
-
-	/**
-	 * @param array $configurations
-	 * @return self
-	 */
-	public function setConfigurations($configurations = []) {
-		$this->configurations = $configurations;
-		return $this;
-	}
-
-	/**
-	 * Read configuration file.
+	 * Get all connection configs.
 	 *
-	 * @return self
+	 * @return array|null
 	 */
-	public function readConfigurations() {
-		$configurationFile = $this->path->getConfigPath() . '/database.php';
-		if (file_exists($configurationFile)) {
-			$this->setConfigurations(require($configurationFile));
+	public function getConnectionConfigs() {
+		return $this->connectionConfigs;
+	}
+
+	/**
+	 * Get connection config.
+	 *
+	 * @param string $name
+	 * @return array|null
+	 */
+	public function getConnectionConfig($name = null) {
+		if (is_null($name)) {
+			$name = $this->defaultConfigName;
 		}
-		return $this;
+
+		if (isset($this->connectionConfigs[$name])) {
+			return $this->connectionConfigs[$name];
+		}
+
+		return null;
+	}
+
+	/**
+	 * Get a connection by name.
+	 *
+	 * @param string $name Optional. Connection name.
+	 * @param bool $forceNew Optional. Create a new connection or reuse the old one if exists.
+	 * @return \PDO|null
+	 */
+	public function getConnection($name = null, $forceNew = false) {
+		if (!$forceNew && isset($this->connections[$name])) {
+			return $this->connections[$name];
+		}
+
+		$config = $this->getConnectionConfig($name);
+
+		if (!$config) {
+			return null;
+		}
+
+		$pdoArgs = [$config['dsn'], $config['username']];
+		$options = [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION];
+
+		if (isset($config['password'])) {
+			array_push($pdoArgs, $config['password']);
+		}
+
+		if (isset($config['options'])) {
+			$options = $config['options'] + $options;
+		}
+		array_push($pdoArgs, $options);
+
+		$this->connections[$name] = new PDO(...$pdoArgs);
+
+		return $this->connections[$name];
 	}
 
 	/**
@@ -73,32 +105,14 @@ class Database {
 	}
 
 	/**
-	 * Get a connection by name.
-	 *
-	 * @param string $name Optional. Connection name.
-	 * @return \Doctrine\DBAL\Connection|null
+	 * Read configuration file.
 	 */
-	public function getConnection($name = 'default') {
-		if (isset($this->connections[$name])) {
-			return $this->connections[$name];
+	public function readConfig() {
+		$file = $this->path->getConfigPath() . '/database.php';
+		if (file_exists($file)) {
+			$config = require($file);
+			$this->defaultConfigName = $config['default'];
+			$this->connectionConfigs = $config['connections'];
 		}
-
-		if (isset($this->configurations[$name])) {
-			$configuration = $this->configurations[$name];
-		} else {
-			return null;
-		}
-
-		$connection = DbalManager::getConnection($configuration, new DbalConfiguration);
-		$this->connections[$name] = $connection;
-		return $connection;
-	}
-
-	/**
-	 * @param string $name Optional. Connection name.
-	 * @return \Doctrine\DBAL\Query\QueryBuilder
-	 */
-	public function getQueryBuilder($name = 'default') {
-		return $this->getConnection($name)->createQueryBuilder();
 	}
 }

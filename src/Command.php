@@ -17,10 +17,10 @@ class Command {
 		'db' => [
 			'init' => 'Database\Initializer.initialize Create database and the migration table',
 			'migration' => [
-				'create' => 'Database\Migrator.create Create a migration file',
-				'migrate' => 'Database\Migrator.migrate Migrate changes to database',
-				'rollback' => 'Database\Migrator.rollback Rollback to previous migration',
+				'create' => 'Database\Migration.create Create a migration file',
 			],
+			'migrate' => 'Database\Migrator.migrate Migrate changes to database',
+			'rollback' => 'Database\Migrator.rollback Rollback to previous migration',
 		],
 	];
 

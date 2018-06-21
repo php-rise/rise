@@ -1,7 +1,6 @@
 <?php
 namespace Rise\Command\Database;
 
-use Doctrine\DBAL\Schema\Table;
 use Rise\Database;
 use Rise\Command\BaseCommand;
 
@@ -9,46 +8,42 @@ class Initializer extends BaseCommand {
 	/**
 	 * @var \Rise\Database
 	 */
-	private $database;
+	private $db;
 
-	public function __construct(Database $database) {
-		$this->database = $database;
+	public function __construct(Database $db) {
+		$this->db = $db;
 	}
 
 	public function initialize() {
-		$configurations = [];
-		$databases = [];
-		foreach ($this->database->getConfigurations() as $connectionName => $configuration) {
-			$databases[$connectionName] = $configuration['dbname'];
-			$configuration['dbname'] = null;
-			$configurations[$connectionName] = $configuration;
-		}
-		$this->database->setConfigurations($configurations);
-		foreach ($databases as $connectionName => $database) {
-			$this->database->getConnection($connectionName)
-				->getSchemaManager()
-				->createDatabase($database);
-			echo "Created database \"$database\".\n";
+		$configs = $this->db->getConnectionConfigs();
+		$keys = array_keys($configs);
+		$keys = array_filter($keys, function ($key) {
+			return substr($key, 0, 5) === '_init';
+		});
+
+		foreach ($keys as $key) {
+			$config = $configs[$key];
+
+			if (isset($config['dbname'])) {
+				$dbname = $config['dbname'];
+				$dbh = $this->db->getConnection($key);
+				$dbh->exec("CREATE DATABASE `$dbname`");
+				echo "Created database \"$dbname\".\n";
+			} else {
+				echo "\"dbname\" not set in config \"$key\"";
+			}
 		}
 
-		$this->database->clearConnections()->readConfigurations();
+		$this->db->clearConnections();
 
-		$tableName = 'migration';
-		$table = new Table($tableName);
-		$table->addColumn('id', 'integer', [
-			'autoincrement' => true,
-			'unsigned' => true,
-		]);
-		$table->addColumn('filename', 'string', [
-			'length' => 255,
-			'customSchemaOptions' => [
-				'unique' => true,
-			],
-		]);
-		$table->setPrimaryKey(['id']);
-		$this->database->getConnection()
-			->getSchemaManager()
-			->createTable($table);
-		echo "Created table \"$tableName\".\n";
+		$sql = <<<SQL
+CREATE TABLE `migration` (
+	`filename` varchar(255) NOT NULL,
+	PRIMARY KEY (`filename`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8
+SQL;
+
+		$this->db->getConnection()->exec($sql);
+		echo "Created table \"migration\".\n";
 	}
 }

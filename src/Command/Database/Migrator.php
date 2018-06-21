@@ -1,7 +1,7 @@
 <?php
 namespace Rise\Command\Database;
 
-use DateTime;
+use PDOException;
 use Rise\Command\BaseCommand;
 use Rise\Path;
 use Rise\Database;
@@ -15,48 +15,24 @@ class Migrator extends BaseCommand {
 	/**
 	 * @var \Rise\Database
 	 */
-	private $database;
+	private $db;
 
-	public function __construct(Path $path, Database $database) {
+	public function __construct(Path $path, Database $db) {
 		$this->path = $path;
-		$this->database = $database;
-	}
-
-	public function create() {
-		if (!isset($this->arguments[0])) {
-			echo "Usage: bin/rise database migration create FILENAME\n";
-			return;
-		}
-
-		$filename = DateTime::createFromFormat('U.u', microtime(true))
-			->format('YmdHisu')
-			. '-' . $this->arguments[0] . '.php';
-		$className = ucfirst($this->arguments[0]);
-		$content = <<<EOD
-<?php
-class $className {
-	public function up() {
-	}
-
-	public function down() {
-	}
-}
-EOD;
-		if (file_put_contents($this->path->getMigrationsPath() . '/' . $filename, $content) === false) {
-			echo "Failed to create migration file.\n";
-		} else {
-			echo "Created migration file \"$filename\"\n";
-		}
+		$this->db = $db;
 	}
 
 	public function migrate() {
-		$lastMigration = $this->database->getQueryBuilder()
-			->select('filename')
-			->from('migration')
-			->orderBy('filename', 'DESC')
-			->setMaxResults(1)
-			->execute()
-			->fetch();
+		$dbh = $this->db->getConnection();
+
+		$sql = <<<SQL
+SELECT * FROM `migration`
+ORDER BY `filename` DESC
+LIMIT 1
+SQL;
+
+		$sth = $dbh->query($sql);
+		$lastMigration = $sth->fetch();
 
 		$migrationsPath = $this->path->getMigrationsPath();
 		$migrationFiles = scandir($migrationsPath);
@@ -66,7 +42,7 @@ EOD;
 		if (empty($migrationFiles)
 			|| ($lastMigration !== false && $lastMigration['filename'] === end($migrationFiles))
 		) {
-			echo "There are no new migrations.\n";
+			echo "There is no new migration.\n";
 		} else {
 			if ($lastMigration !== false) {
 				$index = array_search($lastMigration['filename'], $migrationFiles);
@@ -74,57 +50,88 @@ EOD;
 			}
 
 			foreach ($migrationFiles as $filename) {
-				$className = substr($filename, strpos($filename, '-') + 1);
-				$className = substr($className, 0, strpos($className, '.'));
-				$className = ucfirst($className);
 				require $migrationsPath . '/' . $filename;
+				$className = $this->getClassNameFromFilename($filename);
 				$instance = new $className;
-				$instance->up();
 
-				$this->database->getQueryBuilder()
-					->insert('migration')
-					->values([
-						'filename' => ':filename',
-					])
-					->setParameter('filename', $filename)
-					->execute();
-
-				echo "Migrated file \"$filename\".\n";
+				try {
+					$dbh->beginTransaction();
+					$sql = $instance->up($dbh);
+					if (is_string($sql)) {
+						$sth = $dbh->prepare($sql);
+						$sth->execute();
+					}
+					$sql = <<<SQL
+INSERT INTO `migration` (`filename`)
+VALUES (:filename)
+SQL;
+					$sth = $dbh->prepare($sql);
+					$sth->execute([
+						'filename' => $filename
+					]);
+					$dbh->commit();
+					echo "Migrated file \"$filename\".\n";
+				} catch (PDOException $e) {
+					$dbh->rollback();
+					echo "Error in file \"$filename\".\n";
+					throw $e;
+				}
 			}
 		}
 	}
 
 	public function rollback() {
-		$lastMigration = $this->database->getQueryBuilder()
-			->select('filename')
-			->from('migration')
-			->orderBy('filename', 'DESC')
-			->setMaxResults(1)
-			->execute()
-			->fetch();
+		$dbh = $this->db->getConnection();
+
+		$sql = <<<SQL
+SELECT * FROM `migration`
+ORDER BY `filename` DESC
+LIMIT 1
+SQL;
+
+		$sth = $dbh->query($sql);
+		$lastMigration = $sth->fetch();
 
 		if ($lastMigration === false) {
 			echo "There is no previous migration.\n";
 		} else {
 			$filename = $lastMigration['filename'];
-			$className = substr($filename, strpos($filename, '-') + 1);
-			$className = substr($className, 0, strpos($className, '.'));
-			$className = ucfirst($className);
 			require $this->path->getMigrationsPath() . '/' . $filename;
+			$className = $this->getClassNameFromFilename($filename);
 			$instance = new $className;
-			$instance->down();
 
-			$affected = $this->database->getQueryBuilder()
-				->delete('migration')
-				->where('filename = :filename')
-				->setParameter('filename', $filename)
-				->execute();
-
-			if ($affected) {
-				echo "Rolled back migration file \"$filename\".\n";
-			} else {
-				echo "Cannot remove the migration record in database. Please check manually.\n";
+			try {
+				$dbh->beginTransaction();
+				$sql = $instance->down($dbh);
+				if (is_string($sql)) {
+					$sth = $dbh->prepare($sql);
+					$sth->execute();
+				}
+				$sql = <<<SQL
+DELETE FROM `migration`
+WHERE `filename` = :filename
+SQL;
+				$sth = $dbh->prepare($sql);
+				$sth->execute([
+					'filename' => $filename
+				]);
+				$affected = $sth->rowCount();
+				if ($affected) {
+					echo "Rolled back migration file \"$filename\".\n";
+				} else {
+					echo "Cannot remove the migration record $filename in database. Please check manually.\n";
+				}
+				$dbh->commit();
+			} catch (PDOException $e) {
+				$dbh->rollback();
+				echo "Error in file \"$filename\".\n";
+				throw $e;
 			}
 		}
+	}
+
+	private function getClassNameFromFilename($filename) {
+		list ($datetime, $classNamePrefix) = explode('-', pathinfo($filename, PATHINFO_FILENAME));
+		return ucfirst($classNamePrefix) . $datetime;
 	}
 }
