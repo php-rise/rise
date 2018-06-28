@@ -2,8 +2,8 @@
 namespace Rise;
 
 use Rise\Http\Request;
-use Rise\Router\RoutingEngine;
 use Rise\Router\ScopeFactory;
+use Rise\Router\Result;
 
 class Router {
 	/**
@@ -31,14 +31,14 @@ class Router {
 	protected $matchedStatus;
 
 	/**
-	 * @var \Rise\Router\RoutingEngine
-	 */
-	protected $engine;
-
-	/**
 	 * @var \Rise\Router\ScopeFactory
 	 */
 	protected $scopeFactory;
+
+	/**
+	 * @var \Rise\Router\Result
+	 */
+	protected $result;
 
 	/**
 	 * @var \Rise\Path
@@ -56,31 +56,19 @@ class Router {
 	protected $locale;
 
 	public function __construct(
-		RoutingEngine $engine,
 		ScopeFactory $scopeFactory,
+		Result $result,
 		Path $path,
 		Request $request,
 		Locale $locale
 	) {
-		$this->engine = $engine;
 		$this->scopeFactory = $scopeFactory;
+		$this->result = $result;
 		$this->path = $path;
 		$this->request = $request;
 		$this->locale = $locale;
 
-		$this->readConfigurations();
-	}
-
-	/**
-	 * @return self
-	 */
-	public function readConfigurations() {
-		$configurations = require($this->path->getConfigPath() . '/router.php');
-		$this->routesFile = $this->path->getProjectRootPath() . '/' . $configurations['routesFile'];
-		if (isset($configurations['notFoundHandler'])) {
-			$this->notFoundHandler = $configurations['notFoundHandler'];
-		}
-		return $this;
+		$this->readConfig();
 	}
 
 	/**
@@ -90,7 +78,6 @@ class Router {
 	 */
 	public function buildRoutes() {
 		$scope = $this->scopeFactory->create();
-		$scope->setEngine($this->engine);
 		require($this->routesFile);
 		return $this;
 	}
@@ -101,33 +88,19 @@ class Router {
 	 * @return bool
 	 */
 	public function match() {
-		$request = $this->request;
-		if ($request->isMethod('POST') && $request->getInput('_method')) {
-			$result = $this->engine->dispatch(
-				strtoupper($request->getInput('_method', $request->getMethod())),
-				$request->getRequestPath()
-			);
+		$result = false;
+
+		$this->matchedStatus = $this->result->getStatus();
+
+		if ($this->result->hasHandler()) {
+			$result = true;
+			$this->matchedHandler = $this->result->getHandler();
+			$this->request->setParams($this->result->getParams());
 		} else {
-			$result = $this->engine->dispatch($request->getMethod(), $request->getRequestPath());
+			$this->matchedHandler = $this->notFoundHandler;
 		}
 
-		if (isset($result['error'])) {
-			switch ($result['error']['code']) {
-			case 404:
-				$this->matchedStatus = 404;
-				$this->matchedHandler = $this->notFoundHandler;
-				return false;
-			case 405:
-				$this->matchedStatus = 405;
-				$this->matchedHandler = $this->notFoundHandler;
-				return false;
-			}
-		} else {
-			$this->matchedStatus = 200;
-			$this->matchedHandler = $result['handler'];
-			$request->setParams($result['params']);
-			return true;
-		}
+		return $result;
 	}
 
 	/**
@@ -145,38 +118,14 @@ class Router {
 	}
 
 	/**
-	 * Generate URL of named route
-	 *
-	 * @param string $name
-	 * @param array $params
-	 * @return string
+	 * @return self
 	 */
-	public function generateUrl($name = '', $params = []) {
-		if (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') {
-			$scheme = 'https';
-		} else {
-			$scheme = 'http';
+	protected function readConfig() {
+		$this->routesFile = $this->path->getConfigPath() . '/' . 'routes.php';
+		$configurations = require($this->path->getConfigPath() . '/router.php');
+		if (isset($configurations['notFoundHandler'])) {
+			$this->notFoundHandler = $configurations['notFoundHandler'];
 		}
-		return $scheme . '://' . $_SERVER['HTTP_HOST'] . $this->generatePath($name, $params);
-	}
-
-	/**
-	 * Generate URL path of named route
-	 *
-	 * @param string $name
-	 * @param array $params
-	 * @param string $localeCode
-	 * @return string
-	 */
-	public function generatePath($name = '', $params = [], $localeCode = null) {
-		if (!$localeCode) {
-			$localeCode = $this->locale->getCurrentLocaleCode();
-		}
-
-		if ($localeCode) {
-			return '/' . $localeCode . $this->engine->generatePath($name, $params);
-		}
-
-		return $this->engine->generatePath($name, $params);
+		return $this;
 	}
 }

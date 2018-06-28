@@ -1,23 +1,26 @@
 <?php
 namespace Rise\Router;
 
+use Exception;
+use Rise\Http\Request;
+
 class Scope {
-	/**
-	 * @var \Rise\Router\Scope
-	 */
-	protected $parentScope = null;
+	const ROUTE_PARAM_PATTERN = '/(\\{(.*?)\\})/';
 
 	/**
-	 * @var \Rise\Router\RoutingEngine
-	 */
-	protected $engine;
-
-	/**
+	 * URL path prefix.
 	 * @var string
 	 */
 	protected $prefix = '';
 
 	/**
+	 * Indicates if the prefix is matched with the request path.
+	 * @var bool
+	 */
+	protected $prefixMatched = true;
+
+	/**
+	 * Namespace of all handlers in the scope and child scopes.
 	 * @var string
 	 */
 	protected $namespace = '';
@@ -25,229 +28,288 @@ class Scope {
 	/**
 	 * @var string[]
 	 */
-	protected $beforeHandlers = [];
+	protected $middlewares = [];
 
 	/**
-	 * @var string|null
+	 * Starting offset of request path for testing.
+	 * @var int
 	 */
-	protected $generatedPrefix = null;
+	protected $requestPathOffset = 0;
 
 	/**
-	 * @var string|null
+	 * @var array
 	 */
-	protected $generatedNamespace = null;
+	protected $params = [];
 
 	/**
-	 * @var string[]|null
+	 * @var bool
 	 */
-	protected $generatedBeforeHandlers = null;
+	protected $hasCalledPrefix = false;
 
 	/**
-	 * @return \Rise\Router\Scope
+	 * @var bool
 	 */
-	public function getParentScope() {
-		return $this->parentScope;
+	protected $hasCalledOn = false;
+
+	/**
+	 * @var \Rise\Http\Request
+	 */
+	protected $request;
+
+	/**
+	 * @var \Rise\Router\Result
+	 */
+	protected $result;
+
+	/**
+	 * @var \Rise\Router\UrlGenerator
+	 */
+	protected $urlGenerator;
+
+	public function __construct(Request $request, Result $result, UrlGenerator $urlGenerator) {
+		$this->request = $request;
+		$this->result = $result;
+		$this->urlGenerator = $urlGenerator;
 	}
 
 	/**
-	 * @param \Rise\Router\Scope
-	 * @return self
+	 * Create a child scope.
+	 *
+	 * @param callable $closure
 	 */
-	public function setParentScope($parentScope) {
-		$this->parentScope = $parentScope;
-		return $this;
+	public function createScope($closure) {
+		$newScope = (new static($this->request, $this->result, $this->urlGenerator));
+		$newScope->setupParent(
+			$this->prefix,
+			$this->prefixMatched,
+			$this->requestPathOffset,
+			$this->params
+		);
+		$newScope->use($this->middlewares); // Must add middlewares before adding namespace, as the middlewares are already prefixed with namespace.
+		$newScope->namespace($this->namespace);
+		$closure($newScope);
 	}
 
 	/**
-	 * @return \Rise\Router\RoutingEngine
-	 */
-	public function getEngine() {
-		return $this->engine;
-	}
-
-	/**
-	 * @param \Rise\Router\RoutingEngine
-	 * @return self
-	 */
-	public function setEngine($engine) {
-		$this->engine = $engine;
-		return $this;
-	}
-
-	/**
-	 * @return string
-	 */
-	public function getPrefix() {
-		return $this->prefix;
-	}
-
-	/**
+	 * Set a common path prefix for all routes.
+	 *
 	 * @param string $prefix
 	 * @return self
 	 */
-	public function setPrefix($prefix) {
-		$this->prefix = $prefix;
+	public function prefix($prefix) {
+		if ($this->hasCalledPrefix) {
+			throw new Exception(get_class($this) . '->prefix() should be called only once.');
+		}
+
+		if ($this->hasCalledOn) {
+			throw new Exception(get_class($this) . '->prefix() should be called before ' . get_class($this) . '->on().');
+		}
+
+		$this->hasCalledPrefix = true;
+
+		if (!$this->result->hasHandler() && $this->prefixMatched) {
+			$this->prefixMatched = $this->matchPartial($prefix);
+		}
+
+		$this->prefix .= $prefix;
+
 		return $this;
 	}
 
 	/**
-	 * @return string
-	 */
-	public function getNamespace() {
-		return $this->namespace;
-	}
-
-	/**
+	 * Set a common namespace for all middlewares and handlers.
+	 *
 	 * @param string $namespace
 	 * @return self
 	 */
-	public function setNamespace($namespace) {
-		$this->namespace = $namespace;
+	public function namespace($namespace) {
+		if (empty($namespace)) {
+			$this->namespace = '';
+		} else {
+			$this->namespace = rtrim($namespace, '\\') . '\\';
+		}
 		return $this;
 	}
 
 	/**
-	 * @return string[]
-	 */
-	public function getBeforeHandlers() {
-		return $this->beforeHandlers;
-	}
-
-	/**
-	 * @param string[]|string $beforeHandlers
+	 * Add middlewares.
+	 *
+	 * @param string[]|string $middlewares
 	 * @return self
 	 */
-	public function setBeforeHandlers($beforeHandlers) {
-		$this->beforeHandlers = (array)$beforeHandlers;
+	public function use($middlewares) {
+		$middlewares = (array)$middlewares;
+
+		if ($this->namespace) {
+			foreach ($middlewares as &$middleware) {
+				$middleware = $this->namespace . $middleware;
+			}
+		}
+
+		$this->middlewares = array_merge($this->middlewares, (array)$middlewares);
+
 		return $this;
 	}
 
 	/**
-	 * @return string
-	 */
-	public function getGeneratedPrefix() {
-		if ($this->generatedPrefix !== null) {
-			return $this->generatedPrefix;
-		}
-		$generatedPrefix = '';
-		$scope = $this;
-		do {
-			$prefix = $scope->getPrefix();
-			if ($prefix) {
-				$generatedPrefix = rtrim($prefix, '/') . '/' . ltrim($generatedPrefix, '/');
-			}
-			$scope = $scope->getParentScope();
-		} while ($scope !== null);
-		$this->generatedPrefix = $generatedPrefix;
-		return $generatedPrefix;
-	}
-
-	/**
-	 * @return string
-	 */
-	public function getGeneratedNamespace() {
-		if ($this->generatedNamespace !== null) {
-			return $this->generatedNamespace;
-		}
-		$generatedNamespace = '';
-		$scope = $this;
-		do {
-			$namespace = $scope->getNamespace();
-			if ($namespace) {
-				$generatedNamespace = rtrim($namespace, '\\') . '\\' . ltrim($generatedNamespace, '\\');
-			}
-			$scope = $scope->getParentScope();
-		} while ($scope !== null);
-		if ($generatedNamespace === '\\') {
-			$generatedNamespace = '';
-		}
-		$this->generatedNamespace = $generatedNamespace;
-		return $generatedNamespace;
-	}
-
-	/**
-	 * @return string[]
-	 */
-	public function getGeneratedBeforeHandlers() {
-		if ($this->generatedBeforeHandlers !== null) {
-			return $this->generatedBeforeHandlers;
-		}
-		$generatedBeforeHandlers = [];
-		$scope = $this;
-		do {
-			$generatedBeforeHandlers = array_merge($scope->getBeforeHandlers(), $generatedBeforeHandlers);
-			$scope = $scope->getParentScope();
-		} while ($scope !== null);
-		$this->generatedBeforeHandlers = $generatedBeforeHandlers;
-		return $generatedBeforeHandlers;
-	}
-
-	/**
-	 * @param callable $closure
-	 * @return self
-	 */
-	public function createScope($closure) {
-		$newScope = (new static)->setParentScope($this)
-			->setEngine($this->engine);
-		$closure($newScope);
-		return $this;
-	}
-
-	/**
-	 * @param string|array $methods
+	 * Add a route.
+	 *
+	 * @param string $method
 	 * @param string $path
-	 * @param mixed $handler
+	 * @param string|string[] $handler
 	 * @param string $name Route name.
 	 * @return self
 	 */
-	public function addRoute($methods = [], $path = '', $handler, $name = '') {
-		$path = $this->getGeneratedPrefix() . ltrim($path, '/');
+	public function on($method, $path, $handler, $name = '') {
+		$this->hasCalledOn = true;
 
-		$handlers = (array)$handler;
-		$namespace = $this->getGeneratedNamespace();
-		if ($namespace) {
-			foreach ($handlers as &$handler) {
-				$handler = $namespace . $handler;
+		if (!$this->result->hasHandler()
+			&& $this->prefixMatched
+			&& $this->request->isMethod($method)
+		) {
+			if ($this->matchPartial($path, true)) {
+				$handlers = (array)$handler;
+
+				if ($this->namespace) {
+					foreach ($handlers as &$handler) {
+						$handler = $this->namespace . $handler;
+					}
+				}
+
+				if (!empty($this->middlewares)) {
+					$handlers = array_merge($this->middlewares, $handlers);
+				}
+
+				$this->result->setHandler($handlers);
+				$this->result->setParams($this->params);
 			}
 		}
 
-		$beforeHandlers = $this->getGeneratedBeforeHandlers();
-		if (!empty($beforeHandlers)) {
-			$handlers = array_merge($beforeHandlers, $handlers);
+		if (!empty($name)) {
+			$this->urlGenerator->add($name, $this->prefix . $path);
 		}
 
-		$this->engine->addRoute($methods, $path, $handlers, $name);
+		return $this;
 	}
 
+	/**
+	 * @param string $path
+	 * @param string $handler
+	 * @param string $name
+	 * @return self
+	 */
 	public function options($path, $handler, $name = '') {
-		$this->addRoute('OPTIONS', $path, $handler, $name);
+		return $this->on('OPTIONS', $path, $handler, $name);
 	}
 
 	public function get($path, $handler, $name = '') {
-		$this->addRoute('GET', $path, $handler, $name);
+		return $this->on('GET', $path, $handler, $name);
 	}
 
 	public function head($path, $handler, $name = '') {
-		$this->addRoute('HEAD', $path, $handler, $name);
+		return $this->on('HEAD', $path, $handler, $name);
 	}
 
 	public function post($path, $handler, $name = '') {
-		$this->addRoute('POST', $path, $handler, $name);
+		return $this->on('POST', $path, $handler, $name);
 	}
 
 	public function put($path, $handler, $name = '') {
-		$this->addRoute('PUT', $path, $handler, $name);
+		return $this->on('PUT', $path, $handler, $name);
 	}
 
 	public function delete($path, $handler, $name = '') {
-		$this->addRoute('DELETE', $path, $handler, $name);
+		return $this->on('DELETE', $path, $handler, $name);
 	}
 
 	public function trace($path, $handler, $name = '') {
-		$this->addRoute('TRACE', $path, $handler, $name);
+		return $this->on('TRACE', $path, $handler, $name);
 	}
 
 	public function connect($path, $handler, $name = '') {
-		$this->addRoute('CONNECT', $path, $handler, $name);
+		return $this->on('CONNECT', $path, $handler, $name);
+	}
+
+	/**
+	 * Inherit data from parent scope.
+	 *
+	 * @param string $prefix
+	 * @param bool $prefixMatched
+	 * @param int $requestPathOffset
+	 * @param array $params
+	 */
+	public function setupParent($prefix, $prefixMatched, $requestPathOffset, $params) {
+		$this->prefix = $prefix;
+		$this->prefixMatched = $prefixMatched;
+		$this->requestPathOffset = $requestPathOffset;
+		$this->params = $params;
+	}
+
+	/**
+	 * @param string $routePathPartial,
+	 * @param bool $toEnd
+	 * @return bool
+	 */
+	protected function matchPartial($routePathPartial, $toEnd = false) {
+		$result = false;
+
+		$numOfRouteMatches = preg_match_all(
+			self::ROUTE_PARAM_PATTERN,
+			$routePathPartial,
+			$routeMatches,
+			PREG_OFFSET_CAPTURE
+		);
+
+		if ($numOfRouteMatches === 0) { // plain string
+			if ($toEnd) {
+				$requestPathPartial = substr($this->request->getRequestPath(), $this->requestPathOffset);
+			} else {
+				$requestPathPartial = substr($this->request->getRequestPath(), $this->requestPathOffset, strlen($routePathPartial));
+			}
+
+			if ($routePathPartial === $requestPathPartial) {
+				$result = true;
+
+				if (!$toEnd) {
+					// Move offset if it is not matching to the end, i.e. not the last match.
+					$this->requestPathOffset += strlen($routePathPartial);
+				}
+			}
+		} else if ($numOfRouteMatches > 0) { // has params
+			// Build regex
+			$pos = 0;
+			$pattern = '#^';
+			for ($i = 0; $i < $numOfRouteMatches; $i++) {
+				$pattern .= substr($routePathPartial, $pos, $routeMatches[1][$i][1] - $pos);
+				$pattern .= '(?P<' . $routeMatches[2][$i][0] . '>[^/]+)';
+				$pos = $routeMatches[1][$i][1] + strlen($routeMatches[1][$i][0]);
+			}
+			$pattern .= substr($routePathPartial, $pos);
+			if ($toEnd) {
+				$pattern .= '$';
+			}
+			$pattern .= '#';
+
+			$requestPathPartial = substr($this->request->getRequestPath(), $this->requestPathOffset);
+
+			$numOfPathMatches = preg_match($pattern, $requestPathPartial, $pathMatches);
+
+			if ($numOfPathMatches === 1) {
+				$result = true;
+
+				// Setup params
+				foreach ($routeMatches[2] as $m) {
+					$paramName = $m[0];
+					$this->params[$paramName] = $pathMatches[$paramName];
+				}
+
+				if (!$toEnd) {
+					// Move offset if it is not matching to the end, i.e. not the last match.
+					$this->requestPathOffset += strlen($pathMatches[0]);
+				}
+			}
+		}
+
+		return $result;
 	}
 }

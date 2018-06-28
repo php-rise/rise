@@ -71,11 +71,7 @@ class Dispatcher {
 	 * @param string|array $handlers
 	 */
 	protected function setHandlers($handlers) {
-		if (is_array($handlers)) {
-			$this->handlers = $handlers;
-		} else if (is_string($handlers)) {
-			$this->handlers = [$handlers];
-		}
+		$this->handlers = (array)$handlers;
 	}
 
 	protected function runHandlers() {
