@@ -34,8 +34,6 @@ class Container {
 		$this->bindFactory('Rise\Http\Upload\FileFactory');
 		$this->bindFactory('Rise\Router\ScopeFactory');
 		$this->bindFactory('Rise\Template\Blocks\BlockFactory');
-		$this->bindFactory('Rise\Template\Blocks\LayoutFactory');
-		$this->bindFactory('Rise\Template\Blocks\LayoutableBlockFactory');
 	}
 
 	/**
