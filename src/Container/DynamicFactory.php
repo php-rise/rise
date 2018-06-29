@@ -2,8 +2,10 @@
 namespace Rise\Container;
 
 class DynamicFactory extends BaseFactory {
-	public function create() {
-		list($class) = func_get_args();
+	/**
+	 * @param string $class
+	 */
+	public function create($class) {
 		return $this->container->get($class);
 	}
 }

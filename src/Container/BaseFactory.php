@@ -9,6 +9,4 @@ abstract class BaseFactory {
 	public function __construct(Container $container) {
 		$this->container = $container;
 	}
-
-	abstract public function create();
 }

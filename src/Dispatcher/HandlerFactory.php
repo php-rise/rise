@@ -4,8 +4,12 @@ namespace Rise\Dispatcher;
 use Rise\Container\BaseFactory;
 
 class HandlerFactory extends BaseFactory {
-	public function create() {
-		list($class, $method, $next) = func_get_args();
+	/**
+	 * @param string $class
+	 * @param string $method
+	 * @param callable $next
+	 */
+	public function create($class, $method, $next) {
 		return $this->container->getMethod($class, $method, ['Closure' => $next]);
 	}
 }
