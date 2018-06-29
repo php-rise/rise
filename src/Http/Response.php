@@ -1,8 +1,8 @@
 <?php
 namespace Rise\Http;
 
-use Rise\Router;
 use Rise\Template;
+use Rise\Router\UrlGenerator;
 
 class Response {
 	// @NOTE HTTP status codes from Symfony\Component\HttpFoundation\Response
@@ -174,23 +174,23 @@ class Response {
 	protected $request;
 
 	/**
-	 * @var \Rise\Router
-	 */
-	protected $router;
-
-	/**
 	 * @var \Rise\Template
 	 */
 	protected $template;
 
+	/**
+	 * @var \Rise\Router\UrlGenerator
+	 */
+	protected $urlGenerator;
+
 	public function __construct(
 		Request $request,
-		Router $router,
-		Template $template
+		Template $template,
+		UrlGenerator $urlGenerator
 	) {
 		$this->request = $request;
-		$this->router = $router;
 		$this->template = $template;
+		$this->urlGenerator = $urlGenerator;
 	}
 
 	/**
@@ -201,7 +201,7 @@ class Response {
 	 * @return self
 	 */
 	public function html($template = '', $data = []) {
-		$body = $this->template->renderPage($template, $data);
+		$body = $this->template->render($template, $data);
 		$this->setBody($body);
 		return $this;
 	}
@@ -246,7 +246,7 @@ Redirecting to <a href="%1$s">%1$s</a>.', htmlspecialchars($url, ENT_QUOTES, 'UT
 	 * @return self
 	 */
 	public function redirectRoute($name = '', $params = []) {
-		$this->redirect($this->router->generateUrl($name, $params));
+		$this->redirect($this->urlGenerator->generate($name, $params));
 		return $this;
 	}
 

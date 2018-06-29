@@ -2,33 +2,24 @@
 namespace Rise;
 
 use Rise\Template\Blocks\BlockFactory;
-use Rise\Template\Blocks\LayoutFactory;
-use Rise\Template\Blocks\LayoutableBlockFactory;
 
 class Template {
 	/**
+	 * Map of blocks.
+	 * Format: [
+	 *     '<template path>' => Rise\Template\Blocks\Block
+	 * ]
+	 * @var array
+	 */
+	protected $blocks = [];
+
+	/**
 	 * @var \Rise\Template\Blocks\BlockFactory
 	 */
-	private $blockFactory;
+	protected $blockFactory;
 
-	/**
-	 * @var \Rise\Template\Blocks\LayoutFactory
-	 */
-	private $layoutFactory;
-
-	/**
-	 * @var \Rise\Template\Blocks\LayoutableBlockFactory
-	 */
-	private $LayoutableBlockFactory;
-
-	public function __construct(
-		BlockFactory $blockFactory,
-		LayoutFactory $layoutFactory,
-		LayoutableBlockFactory $layoutableBlockFactory
-	) {
+	public function __construct(BlockFactory $blockFactory) {
 		$this->blockFactory = $blockFactory;
-		$this->layoutFactory = $layoutFactory;
-		$this->layoutableBlockFactory = $layoutableBlockFactory;
 	}
 
 	/**
@@ -38,34 +29,12 @@ class Template {
 	 * @param array $data
 	 * @return string
 	 */
-	public function renderBlock($template = '', $data = []) {
-		return $this->blockFactory->create()
-			->setTemplate($template)
-			->setData($data)->getHtml();
-	}
-
-	/**
-	 * Render a page.
-	 *
-	 * @param string $template
-	 * @param array $data
-	 * @return string
-	 */
-	public function renderPage($template = '', $data = []) {
-		$contentBlock = $this->layoutableBlockFactory->create()
-			->setTemplate($template)
-			->setData($data);
-		$contentHtml = $contentBlock->getHtml();
-
-		if ($contentBlock->getLayoutTemplate()) {
-			return $this->layoutFactory->create()
-				->setTemplate($contentBlock->getLayoutTemplate())
-				->setData($contentBlock->getData())
-				->setContentHtml($contentHtml)
-				->setOverridenNamedBlocks($contentBlock->getOverridenNamedBlocks())
-				->getHtml();
+	public function render($template = '', $data = []) {
+		if (!isset($this->blocks[$template])) {
+			$this->blocks[$template] = $this->blockFactory->create($template);
 		}
-
-		return $contentHtml;
+		$block = $this->blocks[$template];
+		$block->setData($data);
+		return $block->render();
 	}
 }

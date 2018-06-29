@@ -1,22 +1,12 @@
 <?php
 namespace Rise\Template\Blocks;
 
+use Exception;
 use Rise\Path;
 use Rise\Template;
+use Rise\Router\UrlGenerator;
 
-/**
- * Simple template engine.
- *
- * @author Jack Wan <hwguyguy@gmail.com>
- */
 class Block {
-	/**
-	 * Template directory.
-	 *
-	 * @var string
-	 */
-	protected $templateDirectory = '';
-
 	/**
 	 * Template location.
 	 *
@@ -41,11 +31,23 @@ class Block {
 	protected $data = [];
 
 	/**
-	 * Generated html content.
+	 * Template location of extended template.
 	 *
-	 * @var string|null
+	 * @var string
 	 */
-	protected $html = null;
+	protected $extendedTemplate = '';
+
+	/**
+	 * @var array
+	 */
+	protected $extendedData = [];
+
+	/**
+	 * Variable name of the variable storing the content of this block, default to "body".
+	 *
+	 * @var string
+	 */
+	protected $extendedParamName = 'body';
 
 	/**
 	 * @var \Rise\Path
@@ -57,93 +59,19 @@ class Block {
 	 */
 	protected $templateService;
 
-	public function __construct(Path $path, Template $template) {
-		$this->pathService = $path;
-		$this->templateService = $template;
-	}
-
 	/**
-	 * Set template directory.
-	 *
-	 * @param string $path
-	 * @return self
+	 * @var \Rise\Router\UrlGenerator
 	 */
-	public function setTemplateDirectory($path = '') {
-		$this->templateDirectory = rtrim($path, '/');
-		return $this;
-	}
+	protected $urlGenerator;
 
-	/**
-	 * Set template location.
-	 *
-	 * @param string $template
-	 * @return self
-	 */
-	public function setTemplate($template = '') {
-		$this->template = $template;
-		return $this;
-	}
-
-	/**
-	 * Get variables used in template.
-	 *
-	 * @return array
-	 */
-	public function getData() {
-		return $this->data;
-	}
-
-	/**
-	 * Set variables used in template.
-	 *
-	 * @param array $data
-	 * @return self
-	 */
-	public function setData($data = []) {
-		$this->data = $data + $this->data;
-		return $this;
-	}
-
-	/**
-	 * Render a template.
-	 *
-	 * @return self
-	 */
-	public function render() {
-		try {
-			$data = [];
-			$otherData = [];
-			foreach ($this->getData() as $key => $value) {
-				if ($value instanceof Block) {
-					$data[$key] = $value->getHtml();
-					$otherData = $otherData + $value->getData(); // get child template data
-				} else {
-					$data[$key] = $value;
-				}
-			}
-			$data = $data + $otherData;
-			extract($data, EXTR_SKIP);
-			ob_start();
-			include $this->pathService->getTemplatesPath() . '/' . $this->templateDirectory . '/' . $this->template . '.phtml';
-			$html = ob_get_clean();
-		} catch (Exception $e) {
-			$html = '';
-		}
-		$this->html = $html;
-		return $this;
-	}
-
-	/**
-	 * Get html of a template.
-	 *
-	 * @param bool $rerender optional
-	 * @return string
-	 */
-	public function getHtml($rerender = false) {
-		if ($this->html === null || $rerender) {
-			$this->render();
-		}
-		return $this->html;
+	public function __construct(
+		Path $pathService,
+		Template $templateService,
+		UrlGenerator $urlGenerator
+	) {
+		$this->pathService = $pathService;
+		$this->templateService = $templateService;
+		$this->urlGenerator = $urlGenerator;
 	}
 
 	/**
@@ -153,7 +81,88 @@ class Block {
 	 * @param array $data
 	 * @return string
 	 */
-	public function include($template = '', $data = []) {
-		return $this->templateService->renderBlock($template, $data);
+	public function include($template, $data = []) {
+		return $this->templateService->render($template, $data);
+	}
+
+	/**
+	 * Set extended template and data.
+	 *
+	 * @param string $template
+	 * @param array $data Optional.
+	 * @param string $paramName Optional. Variable name of the variable storing the content of this block, default to "body".
+	 */
+	public function extend($template, $data = [], $paramName = 'body') {
+		$this->extendedTemplate = $template;
+		if (is_array($data)) {
+			$this->extendedData = $data;
+		}
+		if (is_string($paramName) && !empty($paramName)) {
+			$this->extendedParamName = $paramName;
+		}
+	}
+
+	/**
+	 * Helper function for generating url.
+	 *
+	 * @param string $name
+	 * @param array $params
+	 * @return string
+	 */
+	public function url($name, $params = []) {
+		return $this->urlGenerator->generate($name, $params);
+	}
+
+	/**
+	 * Render a template.
+	 *
+	 * @return self
+	 */
+	public function render() {
+		$html = $this->renderToHtml();
+
+		if (!empty($this->extendedTemplate)) {
+			$data = [$this->extendedParamName => $html] + $this->extendedData + $this->data;
+			$html = $this->templateService->render($this->extendedTemplate, $data);
+		}
+
+		return $html;
+	}
+
+	/**
+	 * Set template location.
+	 *
+	 * @param string $template
+	 */
+	public function setTemplate($template = '') {
+		$this->template = $template;
+	}
+
+	/**
+	 * Set variables used in template.
+	 *
+	 * @param array $data
+	 */
+	public function setData($data = []) {
+		if (is_array($data)) {
+			$this->data = $data + $this->data;
+		}
+	}
+
+	/**
+	 * Render this block to HTML string.
+	 *
+	 * @return string
+	 */
+	protected function renderToHtml() {
+		try {
+			extract($this->data, EXTR_SKIP);
+			ob_start();
+			include $this->pathService->getTemplatesPath() . '/' . $this->template . '.phtml';
+			$html = ob_get_clean();
+		} catch (Exception $e) {
+			$html = '';
+		}
+		return $html;
 	}
 }
