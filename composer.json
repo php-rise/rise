@@ -20,10 +20,7 @@
 	"autoload": {
 		"psr-4": {
 			"Rise\\": "src/"
-		},
-		"files": [
-			"src/helper.php"
-		]
+		}
 	},
 	"autoload-dev": {
 		"psr-4": {
