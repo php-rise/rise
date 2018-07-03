@@ -1,7 +1,7 @@
 <?php
 namespace Rise\Http;
 
-use Rise\Template;
+use Closure;
 use Rise\Router\UrlGenerator;
 
 class Response {
@@ -66,11 +66,6 @@ class Response {
 	const HTTP_LOOP_DETECTED = 508;                                               // RFC5842
 	const HTTP_NOT_EXTENDED = 510;                                                // RFC2774
 	const HTTP_NETWORK_AUTHENTICATION_REQUIRED = 511;                             // RFC6585
-
-	/**
-	 * @var int
-	 */
-	protected $statusCode = 200;
 
 	/**
 	 * Status codes translation table.
@@ -149,6 +144,26 @@ class Response {
 	];
 
 	/**
+	 * @var bool
+	 */
+	protected $sent = false;
+
+	/**
+	 * @var \Closure
+	 */
+	protected $beforeSend;
+
+	/**
+	 * @var \Closure
+	 */
+	protected $afterSend;
+
+	/**
+	 * @var int
+	 */
+	protected $statusCode = 200;
+
+	/**
 	 * @var string
 	 */
 	protected $contentType = 'text/html';
@@ -174,48 +189,16 @@ class Response {
 	protected $request;
 
 	/**
-	 * @var \Rise\Template
-	 */
-	protected $template;
-
-	/**
 	 * @var \Rise\Router\UrlGenerator
 	 */
 	protected $urlGenerator;
 
 	public function __construct(
 		Request $request,
-		Template $template,
 		UrlGenerator $urlGenerator
 	) {
 		$this->request = $request;
-		$this->template = $template;
 		$this->urlGenerator = $urlGenerator;
-	}
-
-	/**
-	 * Setup HTTP response for a HTML page.
-	 *
-	 * @param string $template
-	 * @param array $data optional
-	 * @return self
-	 */
-	public function html($template = '', $data = []) {
-		$body = $this->template->render($template, $data);
-		$this->setBody($body);
-		return $this;
-	}
-
-	/**
-	 * Setup HTTP response for JSON.
-	 *
-	 * @param array $data
-	 * @return self
-	 */
-	public function json($data = []) {
-		$this->setHeader('Content-Type', 'application/json')
-			->setBody(json_encode($data));
-		return $this;
 	}
 
 	/**
@@ -233,7 +216,7 @@ class Response {
 <meta charset="UTF-8">
 <meta http-equiv="refresh" content="1;url=%1$s">
 <title>Redirecting to %1$s</title>
-Redirecting to <a href="%1$s">%1$s</a>.', htmlspecialchars($url, ENT_QUOTES, 'UTF-8')));
+Redirecting to <a href="%1$s">%1$s</a>', htmlspecialchars($url, ENT_QUOTES, 'UTF-8')));
 
 		return $this;
 	}
@@ -251,9 +234,35 @@ Redirecting to <a href="%1$s">%1$s</a>.', htmlspecialchars($url, ENT_QUOTES, 'UT
 	}
 
 	/**
+	 * @param callable $beforeSend
+	 * @return self
+	 */
+	public function onBeforeSend(Closure $beforeSend) {
+		$this->beforeSend = $beforeSend;
+		return $this;
+	}
+
+	/**
+	 * @param callable $afterSend
+	 * @return self
+	 */
+	public function onAfterSend(Closure $afterSend) {
+		$this->afterSend = $afterSend;
+		return $this;
+	}
+
+	/**
 	 * @return self
 	 */
 	public function send() {
+		if ($this->sent) {
+			return $this;
+		}
+
+		if ($this->beforeSend instanceof Closure) {
+			($this->beforeSend)();
+		}
+
 		if ($this->request && $this->request->isMethod('HEAD')) {
 			$this->unsetHeader('Content-Length');
 			$this->setBody('');
@@ -276,6 +285,12 @@ Redirecting to <a href="%1$s">%1$s</a>.', htmlspecialchars($url, ENT_QUOTES, 'UT
 			static::closeOutputBuffers(0, true);
 		}
 
+		if ($this->afterSend instanceof Closure) {
+			($this->afterSend)();
+		}
+
+		$this->sent = true;
+
 		return $this;
 	}
 
@@ -288,6 +303,14 @@ Redirecting to <a href="%1$s">%1$s</a>.', htmlspecialchars($url, ENT_QUOTES, 'UT
 	public function setStatusCode($code = 200) {
 		$this->statusCode = (int)$code;
 		return $this;
+	}
+
+	/**
+	 * @param string $name
+	 * @return bool
+	 */
+	public function hasHeader($name = '') {
+		return array_key_exists($name, $this->headers);
 	}
 
 	/**
@@ -341,14 +364,6 @@ Redirecting to <a href="%1$s">%1$s</a>.', htmlspecialchars($url, ENT_QUOTES, 'UT
 	}
 
 	/**
-	 * @param string $name
-	 * @return bool
-	 */
-	public function hasHeader($name = '') {
-		return array_key_exists($name, $this->headers);
-	}
-
-	/**
 	 * @param string $body
 	 * @return self
 	 */
@@ -361,15 +376,16 @@ Redirecting to <a href="%1$s">%1$s</a>.', htmlspecialchars($url, ENT_QUOTES, 'UT
 	 * @param string $contentType
 	 * @return self
 	 */
-	public function setContentType($contentType = '') {
+	public function setContentType($contentType) {
 		$this->contentType = $contentType;
 		return $this;
 	}
 
 	/**
+	 * @param string $charset
 	 * @return self
 	 */
-	public function setCharset($charset = '') {
+	public function setCharset($charset) {
 		$this->charset = $charset;
 		return $this;
 	}
@@ -389,8 +405,6 @@ Redirecting to <a href="%1$s">%1$s</a>.', htmlspecialchars($url, ENT_QUOTES, 'UT
 
 		// @TODO set cookies
 		// setcookie();
-
-		header_remove('X-Powered-By');
 
 		return $this;
 	}
