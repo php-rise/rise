@@ -394,6 +394,10 @@ Redirecting to <a href="%1$s">%1$s</a>', htmlspecialchars($url, ENT_QUOTES, 'UTF
 	 * @return self
 	 */
 	protected function sendHeaders() {
+		if (headers_sent()) {
+			return $this;
+		}
+
 		header($this->getStatusLine(), true, $this->statusCode);
 
 		$headers = $this->getHeaders();
