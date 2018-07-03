@@ -26,7 +26,10 @@
 	"autoload-dev": {
 		"psr-4": {
 			"Rise\\Test\\": "tests/"
-		}
+		},
+		"files": [
+			"tests/override.php"
+		]
 	},
 	"scripts": {
 		"test": "phpunit"

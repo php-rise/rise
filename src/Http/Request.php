@@ -1,6 +1,8 @@
 <?php
 namespace Rise\Http;
 
+use Rise\Http\Request\Upload;
+
 class Request {
 	/**
 	 * Request URI. Same as $_SERVER['REQUEST_URI']
@@ -63,7 +65,7 @@ class Request {
 	 * @param string $requestPath
 	 * @return self
 	 */
-	public function setRequestPath($requestPath = '') {
+	public function setRequestPath($requestPath) {
 		$this->requestPath = $requestPath;
 		return $this;
 	}

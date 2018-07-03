@@ -1,5 +1,5 @@
 <?php
-namespace Rise\Http\Upload;
+namespace Rise\Http\Request\Upload;
 
 class File {
 	/**
@@ -19,14 +19,6 @@ class File {
 	protected $type;
 
 	/**
-	 * Size in bytes.
-	 * $_FILES['<key>']['error']
-	 *
-	 * @var int
-	 */
-	protected $size;
-
-	/**
 	 * Temporary filename on server.
 	 * $_FILES['<key>']['tmp_name']
 	 *
@@ -37,13 +29,23 @@ class File {
 	/**
 	 * Error code.
 	 * $_FILES['<key>']['error']
-	 * Reference: http://php.net/manual/en/features.file-upload.errors.php
+	 * See http://php.net/manual/en/features.file-upload.errors.php
 	 *
 	 * @var int
 	 */
 	protected $error;
 
 	/**
+	 * Size in bytes.
+	 * $_FILES['<key>']['size']
+	 *
+	 * @var int
+	 */
+	protected $size;
+
+	/**
+	 * Maximum allowed file size. -1 is unlimited.
+	 *
 	 * @var int
 	 */
 	protected $maxFileSize = 100000000;
@@ -63,15 +65,6 @@ class File {
 	 */
 	public function setType($type) {
 		$this->type = $type;
-		return $this;
-	}
-
-	/**
-	 * @param int $size
-	 * @return self
-	 */
-	public function setSize($size) {
-		$this->size = $size;
 		return $this;
 	}
 
@@ -97,6 +90,15 @@ class File {
 	 * @param int $size
 	 * @return self
 	 */
+	public function setSize($size) {
+		$this->size = $size;
+		return $this;
+	}
+
+	/**
+	 * @param int $size
+	 * @return self
+	 */
 	public function setMaxFileSize($size) {
 		$this->maxFileSize = $size;
 		return $this;
@@ -112,7 +114,9 @@ class File {
 			return false;
 		}
 
-		if ($this->size > $this->maxFileSize) {
+		if ($this->maxFileSize >= 0
+			&& $this->size > $this->maxFileSize
+		) {
 			return false;
 		}
 
@@ -146,7 +150,7 @@ class File {
 			return null;
 		}
 
-		if (substr($directory, 0, strlen($prefix)) === $prefix) {
+		if (!empty($prefix) && substr($directory, 0, strlen($prefix)) === $prefix) {
 			$directory = substr($directory, strlen($prefix));
 		}
 
