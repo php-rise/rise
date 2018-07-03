@@ -8,7 +8,7 @@ use Rise\Http\Response;
 use Rise\Template;
 
 final class HtmlTest extends TestCase {
-	public function test() {
+	public function testDefaultBehaviour() {
 		$response = $this->createMock(Response::class);
 		$template = $this->createMock(Template::class);
 

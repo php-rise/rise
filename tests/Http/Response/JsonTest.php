@@ -7,7 +7,7 @@ use Rise\Http\Response\Json;
 use Rise\Http\Response;
 
 final class JsonTest extends TestCase {
-	public function test() {
+	public function testDefaultBehaviour() {
 		$response = $this->createMock(Response::class);
 
 		$beforeSend = '';
