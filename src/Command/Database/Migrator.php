@@ -23,7 +23,25 @@ class Migrator extends BaseCommand {
 	}
 
 	public function migrate() {
-		$dbh = $this->db->getConnection();
+		$configs = $this->db->getConnectionConfigs();
+		foreach ($configs as $key => $config) {
+			if (isset($config['migrate']) && $config['migrate']) {
+				$this->migrateConnection($key);
+			}
+		}
+	}
+
+	public function rollback() {
+		$configs = $this->db->getConnectionConfigs();
+		foreach ($configs as $key => $config) {
+			if (isset($config['migrate']) && $config['migrate']) {
+				$this->rollbackConnection($key);
+			}
+		}
+	}
+
+	private function migrateConnection($connectionName) {
+		$dbh = $this->db->getConnection($connectionName);
 
 		$sql = <<<SQL
 SELECT * FROM `migration`
@@ -80,8 +98,8 @@ SQL;
 		}
 	}
 
-	public function rollback() {
-		$dbh = $this->db->getConnection();
+	private function rollbackConnection($connectionName) {
+		$dbh = $this->db->getConnection($connectionName);
 
 		$sql = <<<SQL
 SELECT * FROM `migration`
