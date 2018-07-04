@@ -9,7 +9,6 @@ use Rise\Router\Scope;
 use Rise\Router\Result;
 use Rise\Path;
 use Rise\Request;
-use Rise\Locale;
 
 final class RouterTest extends TestCase {
 	private $root;
@@ -53,7 +52,6 @@ PHP;
 		$result = $this->createMock(Result::class);
 		$path = $this->createMock(Path::class);
 		$request = $this->createMock(Request::class);
-		$locale = $this->createMock(Locale::class);
 		$scope = $this->createMock(Scope::class);
 
 		$path->expects($this->any())
@@ -64,7 +62,7 @@ PHP;
 			->method('create')
 			->willReturn($scope);
 
-		$router = new Router($scopeFactory, $result, $path, $request, $locale);
+		$router = new Router($scopeFactory, $result, $path, $request);
 		$router->buildRoutes();
 	}
 
@@ -73,7 +71,6 @@ PHP;
 		$result = $this->createMock(Result::class);
 		$path = $this->createMock(Path::class);
 		$request = $this->createMock(Request::class);
-		$locale = $this->createMock(Locale::class);
 
 		$path->expects($this->any())
 			->method('getConfigPath')
@@ -99,7 +96,7 @@ PHP;
 			->method('setParams')
 			->with($this->equalTo(['id' => 15]));
 
-		$router = new Router($scopeFactory, $result, $path, $request, $locale);
+		$router = new Router($scopeFactory, $result, $path, $request);
 		$matched = $router->match();
 
 		$this->assertTrue($matched);
@@ -112,7 +109,6 @@ PHP;
 		$result = $this->createMock(Result::class);
 		$path = $this->createMock(Path::class);
 		$request = $this->createMock(Request::class);
-		$locale = $this->createMock(Locale::class);
 
 		$path->expects($this->any())
 			->method('getConfigPath')
@@ -126,7 +122,7 @@ PHP;
 			->method('getStatus')
 			->willReturn(404);
 
-		$router = new Router($scopeFactory, $result, $path, $request, $locale);
+		$router = new Router($scopeFactory, $result, $path, $request);
 		$matched = $router->match();
 
 		$this->assertFalse($matched);

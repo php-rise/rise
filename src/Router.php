@@ -1,7 +1,6 @@
 <?php
 namespace Rise;
 
-use Rise\Request;
 use Rise\Router\ScopeFactory;
 use Rise\Router\Result;
 
@@ -50,23 +49,16 @@ class Router {
 	 */
 	protected $request;
 
-	/**
-	 * @var \Rise\Locale
-	 */
-	protected $locale;
-
 	public function __construct(
 		ScopeFactory $scopeFactory,
 		Result $result,
 		Path $path,
-		Request $request,
-		Locale $locale
+		Request $request
 	) {
 		$this->scopeFactory = $scopeFactory;
 		$this->result = $result;
 		$this->path = $path;
 		$this->request = $request;
-		$this->locale = $locale;
 
 		$this->readConfig();
 	}
