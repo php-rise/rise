@@ -13,21 +13,16 @@ class Command {
 	 * @var array
 	 */
 	protected $rules = [
-		'help' => 'Help.show Show help',
+		'help' => 'Rise\Command\Help.show Show help',
 		'db' => [
-			'init' => 'Database\Initializer.initialize Create database and the migration table',
+			'init' => 'Rise\Command\Database\Initializer.initialize Create database and the migration table',
 			'migration' => [
-				'create' => 'Database\Migration.create Create a migration file',
+				'create' => 'Rise\CommandDatabase\Migration.create Create a migration file',
 			],
-			'migrate' => 'Database\Migrator.migrate Migrate changes to database',
-			'rollback' => 'Database\Migrator.rollback Rollback to previous migration',
+			'migrate' => 'Rise\Command\Database\Migrator.migrate Migrate changes to database',
+			'rollback' => 'Rise\Command\Database\Migrator.rollback Rollback to previous migration',
 		],
 	];
-
-	/**
-	 * @var string[]
-	 */
-	protected $namespaces = ['\Rise\Command'];
 
 	/**
 	 * @var \Rise\Path
@@ -84,19 +79,6 @@ class Command {
 	}
 
 	/**
-	 * Add namespace for searching.
-	 *
-	 * @param string $namespace
-	 * @return self
-	 */
-	public function addNamespace($namespace = '') {
-		if ($namespace) {
-			$this->namespaces[] = $namespace;
-		}
-		return $this;
-	}
-
-	/**
 	 * @param string[] $arguments
 	 * @return self
 	 */
@@ -107,10 +89,6 @@ class Command {
 		}
 
 		$component = $this->createComponentInstance($class);
-		if ($component === null) {
-			return $this->warn();
-		}
-
 		$component->setArguments($arguments)->{$method}();
 
 		return $this;
@@ -123,9 +101,6 @@ class Command {
 		$file = $this->path->getConfigPath() . '/command.php';
 		if (file_exists($file)) {
 			$configurations = require($file);
-			if (isset($configurations['namespaces'])) {
-				$this->namespaces = array_merge($this->namespaces, (array)$configurations['namespaces']);
-			}
 			if (isset($configurations['rules'])) {
 				$this->rules = array_replace_recursive($this->rules, $configurations['rules']);
 			}
@@ -170,23 +145,10 @@ class Command {
 	}
 
 	/**
-	 * @param string $partClassName
-	 * @return \Rise\Command\BaseCommand|null
+	 * @param string $className
+	 * @return \Rise\Command\BaseCommand
 	 */
-	protected function createComponentInstance($partClassName) {
-		$namespace = end($this->namespaces);
-		do {
-			$class = $namespace . '\\' . $partClassName;
-			if (class_exists($class)) {
-				break;
-			}
-			$class = null;
-		} while ($namespace = prev($this->namespaces));
-
-		if ($class === null) {
-			return null;
-		}
-
-		return $this->dynamicFactory->create($class);
+	protected function createComponentInstance($className) {
+		return $this->dynamicFactory->create($className);
 	}
 }
