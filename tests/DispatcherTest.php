@@ -4,7 +4,7 @@ namespace Rise\Test;
 use Closure;
 use PHPUnit\Framework\TestCase;
 use Rise\Router;
-use Rise\Http\Response;
+use Rise\Response;
 use Rise\Session;
 use Rise\Dispatcher\HandlerFactory;
 use Rise\Dispatcher;

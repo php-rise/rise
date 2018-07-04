@@ -1,7 +1,7 @@
 <?php
-namespace Rise\Http;
+namespace Rise;
 
-use Rise\Http\Request\Upload;
+use Rise\Request\Upload;
 
 class Request {
 	/**
@@ -31,7 +31,7 @@ class Request {
 	protected $params = [];
 
 	/**
-	 * @var \Rise\Http\Upload
+	 * @var \Rise\Upload
 	 */
 	protected $httpUpload;
 
@@ -154,7 +154,7 @@ class Request {
 	 * Get uploaded file.
 	 *
 	 * @param string $key
-	 * @return \Rise\Components\Http\Request\Upload\File|\Rise\Components\Http\Request\Upload\File[]|null
+	 * @return \Rise\Request\Upload\File|\Rise\Request\Upload\File[]|null
 	 */
 	public function getFile($key) {
 		return $this->httpUpload->getFile($key);

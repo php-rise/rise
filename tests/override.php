@@ -20,7 +20,7 @@ function session_regenerate_id() {
 
 }
 
-namespace Rise\Http\Request\Upload {
+namespace Rise\Request\Upload {
 
 function move_uploaded_file($from, $to) {
 	return rename($from, $to);

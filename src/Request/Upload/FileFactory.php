@@ -1,10 +1,10 @@
 <?php
-namespace Rise\Http\Request\Upload;
+namespace Rise\Request\Upload;
 
 use Rise\Container\BaseFactory;
 
 class FileFactory extends BaseFactory {
 	public function create() {
-		return $this->container->getNewInstance('Rise\Http\Request\Upload\File');
+		return $this->container->getNewInstance('Rise\Request\Upload\File');
 	}
 }

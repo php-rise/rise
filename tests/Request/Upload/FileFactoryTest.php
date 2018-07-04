@@ -1,9 +1,9 @@
 <?php
-namespace Rise\Test\Http\Request\Upload;
+namespace Rise\Test\Request\Upload;
 
 use PHPUnit\Framework\TestCase;
-use Rise\Http\Request\Upload\FileFactory;
-use Rise\Http\Request\Upload\File;
+use Rise\Request\Upload\FileFactory;
+use Rise\Request\Upload\File;
 use Rise\Container;
 
 final class FileFactoryTest extends TestCase {

@@ -8,7 +8,7 @@ use Rise\Router\ScopeFactory;
 use Rise\Router\Scope;
 use Rise\Router\Result;
 use Rise\Path;
-use Rise\Http\Request;
+use Rise\Request;
 use Rise\Locale;
 
 final class RouterTest extends TestCase {

@@ -1,5 +1,5 @@
 <?php
-namespace Rise\Http;
+namespace Rise;
 
 use Closure;
 use Rise\Router\UrlGenerator;
@@ -184,7 +184,7 @@ class Response {
 	protected $body = '';
 
 	/**
-	 * @var \Rise\Http\Request
+	 * @var \Rise\Request
 	 */
 	protected $request;
 

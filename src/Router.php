@@ -1,7 +1,7 @@
 <?php
 namespace Rise;
 
-use Rise\Http\Request;
+use Rise\Request;
 use Rise\Router\ScopeFactory;
 use Rise\Router\Result;
 
@@ -46,7 +46,7 @@ class Router {
 	protected $path;
 
 	/**
-	 * @var \Rise\Http\Request
+	 * @var \Rise\Request
 	 */
 	protected $request;
 

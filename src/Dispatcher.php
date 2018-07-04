@@ -1,7 +1,7 @@
 <?php
 namespace Rise;
 
-use Rise\Http\Response;
+use Rise\Response;
 use Rise\Dispatcher\HandlerFactory;
 
 class Dispatcher {
@@ -16,7 +16,7 @@ class Dispatcher {
 	protected $router;
 
 	/**
-	 * @var \Rise\Http\Response
+	 * @var \Rise\Response
 	 */
 	protected $response;
 

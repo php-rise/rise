@@ -1,9 +1,9 @@
 <?php
-namespace Rise\Test\Http;
+namespace Rise\Test;
 
 use PHPUnit\Framework\TestCase;
-use Rise\Http\Response;
-use Rise\Http\Request;
+use Rise\Response;
+use Rise\Request;
 use Rise\Router\UrlGenerator;
 
 final class ResponseTest extends TestCase {

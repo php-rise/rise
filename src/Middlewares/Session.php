@@ -3,8 +3,8 @@ namespace Rise\Middlewares;
 
 use Closure;
 use Rise\Session as SessionService;
-use Rise\Http\Request;
-use Rise\Http\Response;
+use Rise\Request;
+use Rise\Response;
 
 class Session {
 	/**
@@ -13,12 +13,12 @@ class Session {
 	protected $sessionService;
 
 	/**
-	 * @var \Rise\Http\Request
+	 * @var \Rise\Request
 	 */
 	protected $request;
 
 	/**
-	 * @var \Rise\Http\Response
+	 * @var \Rise\Response
 	 */
 	protected $response;
 

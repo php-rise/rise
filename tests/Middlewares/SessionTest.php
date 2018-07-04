@@ -4,8 +4,8 @@ namespace Rise\Test\Middlewares;
 use PHPUnit\Framework\TestCase;
 use Rise\Middlewares\Session as SessionMiddleware;
 use Rise\Session as SessionService;
-use Rise\Http\Request;
-use Rise\Http\Response;
+use Rise\Request;
+use Rise\Response;
 
 final class SessionTest extends TestCase {
 	public function testRun() {

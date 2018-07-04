@@ -1,7 +1,7 @@
 <?php
 namespace Rise;
 
-use Rise\Http\Request;
+use Rise\Request;
 
 class Locale {
 	/**
@@ -54,7 +54,7 @@ class Locale {
 	protected $path;
 
 	/**
-	 * @var \Rise\Http\Request
+	 * @var \Rise\Request
 	 */
 	protected $request;
 

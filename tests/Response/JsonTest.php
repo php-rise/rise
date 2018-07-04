@@ -1,10 +1,10 @@
 <?php
-namespace Rise\Test\Http\Response;
+namespace Rise\Test\Response;
 
 use Closure;
 use PHPUnit\Framework\TestCase;
-use Rise\Http\Response\Json;
-use Rise\Http\Response;
+use Rise\Response\Json;
+use Rise\Response;
 
 final class JsonTest extends TestCase {
 	public function testDefaultBehaviour() {

@@ -1,10 +1,10 @@
 <?php
-namespace Rise\Test\Http;
+namespace Rise\Test;
 
 use PHPUnit\Framework\TestCase;
-use Rise\Http\Request;
-use Rise\Http\Request\Upload;
-use Rise\Http\Request\Upload\File;
+use Rise\Request;
+use Rise\Request\Upload;
+use Rise\Request\Upload\File;
 
 final class RequestTest extends TestCase {
 	public function setUp() {

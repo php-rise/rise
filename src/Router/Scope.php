@@ -2,7 +2,7 @@
 namespace Rise\Router;
 
 use Exception;
-use Rise\Http\Request;
+use Rise\Request;
 
 class Scope {
 	const ROUTE_PARAM_PATTERN = '/(\\{(.*?)\\})/';
@@ -52,7 +52,7 @@ class Scope {
 	protected $hasCalledOn = false;
 
 	/**
-	 * @var \Rise\Http\Request
+	 * @var \Rise\Request
 	 */
 	protected $request;
 

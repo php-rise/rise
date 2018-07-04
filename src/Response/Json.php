@@ -1,10 +1,9 @@
 <?php
-namespace Rise\Http\Response;
+namespace Rise\Response;
 
-use Rise\Http\Response;
-use Rise\Template;
+use Rise\Response;
 
-class Html {
+class Json {
 	/**
 	 * Indicate whether the response hooks has been registered or not.
 	 * @var bool
@@ -14,7 +13,7 @@ class Html {
 	/**
 	 * @var string
 	 */
-	protected $contentType = 'text/html';
+	protected $contentType = 'application/json';
 
 	/**
 	 * @var string
@@ -22,57 +21,53 @@ class Html {
 	protected $charset = 'UTF-8';
 
 	/**
-	 * @var string
+	 * @var mixed
 	 */
-	protected $template;
+	protected $data = null;
 
 	/**
-	 * @var array
-	 */
-	protected $data = [];
-
-	/**
-	 * @var \Rise\Http\Response
+	 * @var \Rise\Response
 	 */
 	protected $response;
 
-	/**
-	 * @var \Rise\Template
-	 */
-	protected $templateService;
-
-	public function __construct(Response $response, Template $templateService) {
+	public function __construct(Response $response) {
 		$this->response = $response;
-		$this->templateService = $templateService;
 	}
 
 	/**
-	 * Set template and data.
+	 * Set data.
 	 *
-	 * @param string $template
-	 * @param array $data Optional.
+	 * @param mixed $data
 	 * @return self
 	 */
-	public function render($template, $data = []) {
-		$this->template = $template;
+	public function data($data) {
 		$this->data = $data;
 		$this->registerResponseHooks();
 		return $this;
 	}
 
 	/**
-	 * Update data.
+	 * Update array data.
 	 *
 	 * @param array $data
 	 * @param bool $recursive Optional. Default to false.
 	 * @return self
 	 */
 	public function update($data, $recursive = false) {
-		if (!$recursive) {
-			$this->data = array_merge($this->data, $data);
-		} else {
-			$this->data = array_replace_recursive($this->data, $data);
+		if (!is_array($data)) {
+			return $this->data($data);
 		}
+
+		if (is_array($this->data)) {
+			if (!$recursive) {
+				$this->data = array_merge($this->data, $data);
+			} else {
+				$this->data = array_replace_recursive($this->data, $data);
+			}
+		} else {
+			$this->data = $data;
+		}
+
 		return $this;
 	}
 
@@ -106,10 +101,9 @@ class Html {
 	}
 
 	protected function beforeSend() {
-		$body = $this->templateService->render($this->template, $this->data);
 		$response = $this->response;
 		$response->setContentType($this->contentType);
 		$response->setCharset($this->charset);
-		$response->setBody($body);
+		$response->setBody(json_encode($this->data));
 	}
 }

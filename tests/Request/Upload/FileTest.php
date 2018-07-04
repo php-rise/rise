@@ -1,9 +1,9 @@
 <?php
-namespace Rise\Test\Http\Request\Upload;
+namespace Rise\Test\Request\Upload;
 
 use PHPUnit\Framework\TestCase;
 use org\bovigo\vfs\vfsStream;
-use Rise\Http\Request\Upload\File;
+use Rise\Request\Upload\File;
 
 final class FileTest extends TestCase {
 	private $root;

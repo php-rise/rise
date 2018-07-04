@@ -4,7 +4,7 @@ namespace Rise\Test\Router;
 use Exception;
 use PHPUnit\Framework\TestCase;
 use Rise\Router\Scope;
-use Rise\Http\Request;
+use Rise\Request;
 use Rise\Router\Result;
 use Rise\Router\UrlGenerator;
 

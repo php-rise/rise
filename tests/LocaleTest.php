@@ -5,7 +5,7 @@ use PHPUnit\Framework\TestCase;
 use org\bovigo\vfs\vfsStream;
 use Rise\Locale;
 use Rise\Path;
-use Rise\Http\Request;
+use Rise\Request;
 
 final class LocaleTest extends TestCase {
 	private $root;

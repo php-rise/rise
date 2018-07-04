@@ -1,7 +1,7 @@
 <?php
-namespace Rise\Http\Request;
+namespace Rise\Request;
 
-use Rise\Http\Request\Upload\FileFactory;
+use Rise\Request\Upload\FileFactory;
 
 class Upload {
 	/**
@@ -19,7 +19,7 @@ class Upload {
 	protected $files = [];
 
 	/**
-	 * @var \Rise\Http\Request\Upload\FileFactory
+	 * @var \Rise\Request\Upload\FileFactory
 	 */
 	protected $fileFactory;
 
@@ -31,7 +31,7 @@ class Upload {
 	 * Get uploaded file or files.
 	 *
 	 * @param string $key
-	 * @return \Rise\Http\Request\Upload\File|array|null
+	 * @return \Rise\Request\Upload\File|\Rise\Request\Upload\File[]|null
 	 */
 	public function getFile($key) {
 		if (isset($this->files[$key])) {
@@ -80,7 +80,7 @@ class Upload {
 	 * @param string $tmpName
 	 * @param int $error
 	 * @param int $size
-	 * @return \Rise\Http\Request\Upload\File
+	 * @return \Rise\Request\Upload\File
 	 */
 	protected function createFile($name, $type, $tmpName, $error, $size) {
 		$file = $this->fileFactory->create();

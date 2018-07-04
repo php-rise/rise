@@ -1,5 +1,5 @@
 <?php
-namespace Rise\Http\Request\Upload;
+namespace Rise\Request\Upload;
 
 class File {
 	/**

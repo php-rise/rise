@@ -1,10 +1,10 @@
 <?php
-namespace Rise\Test\Http\Response;
+namespace Rise\Test\Response;
 
 use Closure;
 use PHPUnit\Framework\TestCase;
-use Rise\Http\Response\Html;
-use Rise\Http\Response;
+use Rise\Response\Html;
+use Rise\Response;
 use Rise\Template;
 
 final class HtmlTest extends TestCase {
