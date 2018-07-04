@@ -30,7 +30,6 @@ class Initializer {
 	 * @return self
 	 */
 	public function run() {
-		$this->container->get(Locale::class)->parseRequestLocale();
 		$this->container->get(Router::class)->buildRoutes();
 		$this->container->get(Dispatcher::class)->dispatch();
 		return $this;

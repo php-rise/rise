@@ -12,7 +12,7 @@ class Request {
 	protected $requestUri = '';
 
 	/**
-	 * Request path. Request URL without the locale code.
+	 * Request path, default is same as request URI, but can be changed in runtime.
 	 */
 	protected $requestPath = '';
 
@@ -22,6 +22,13 @@ class Request {
 	 * @var string
 	 */
 	protected $method = '';
+
+	/**
+	 * Host.
+	 *
+	 * @var string|null
+	 */
+	protected $host = null;
 
 	/**
 	 * Url parameters. Key value pairs.
@@ -86,6 +93,33 @@ class Request {
 	 */
 	public function isMethod($method = '') {
 		return ($this->method === $method);
+	}
+
+	/**
+	 * Get HTTP host.
+	 *
+	 * @return string
+	 */
+	public function getHost() {
+		if (!is_null($this->host)) {
+			return $this->host;
+		}
+
+		if ($_SERVER['HTTP_X_FORWARDED_HOST']) {
+			$elements = explode(',', $value);
+			$host = trim(end($elements));
+		} else if ($_SERVER['HTTP_HOST']) {
+			$host = $_SERVER['HTTP_HOST'];
+		} else if ($_SERVER['SERVER_NAME']) {
+			$host = $_SERVER['SERVER_NAME'];
+		}
+
+		if (isset($host)) {
+			$host = preg_replace('/:\d+$/', '', $host);
+			$this->host = $host;
+		}
+
+		return $this->host;
 	}
 
 	/**
