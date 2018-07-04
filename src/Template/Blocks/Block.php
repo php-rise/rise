@@ -5,6 +5,7 @@ use Exception;
 use Rise\Path;
 use Rise\Template;
 use Rise\Router\UrlGenerator;
+use Rise\Session;
 
 class Block {
 	/**
@@ -64,14 +65,21 @@ class Block {
 	 */
 	protected $urlGenerator;
 
+	/**
+	 * @var \Rise\Session
+	 */
+	protected $session;
+
 	public function __construct(
 		Path $pathService,
 		Template $templateService,
-		UrlGenerator $urlGenerator
+		UrlGenerator $urlGenerator,
+		Session $session
 	) {
 		$this->pathService = $pathService;
 		$this->templateService = $templateService;
 		$this->urlGenerator = $urlGenerator;
+		$this->session = $session;
 	}
 
 	/**
@@ -111,6 +119,33 @@ class Block {
 	 */
 	public function url($name, $params = []) {
 		return $this->urlGenerator->generate($name, $params);
+	}
+
+	/**
+	 * Helper function for generating CSRF HTML.
+	 *
+	 * @return string
+	 */
+	public function csrf() {
+		return $this->session->generateCsrfHtml();
+	}
+
+	/**
+	 * Helper function for getting CSRF form key.
+	 *
+	 * @return string
+	 */
+	public function csrfKey() {
+		return $this->session->getCsrfTokenFormKey();
+	}
+
+	/**
+	 * Helper function for getting CSRF token.
+	 *
+	 * @return string
+	 */
+	public function csrfValue() {
+		return $this->session->getCsrfToken();
 	}
 
 	/**
