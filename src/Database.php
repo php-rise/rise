@@ -33,7 +33,7 @@ class Database {
 	/**
 	 * Get all connection configs.
 	 *
-	 * @return array|null
+	 * @return array
 	 */
 	public function getConnectionConfigs() {
 		return $this->connectionConfigs;
@@ -55,6 +55,18 @@ class Database {
 		}
 
 		return null;
+	}
+
+	/**
+	 * Set connection config. This will overwrite existing config with the same name.
+	 *
+	 * @param string $name
+	 * @param array $config
+	 * @return self
+	 */
+	public function setConnectionConfig($name, $config) {
+		$this->connectionConfigs[$name] = $config;
+		return $this;
 	}
 
 	/**

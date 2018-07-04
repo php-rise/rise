@@ -16,34 +16,51 @@ class Initializer extends BaseCommand {
 
 	public function initialize() {
 		$configs = $this->db->getConnectionConfigs();
-		$keys = array_keys($configs);
-		$keys = array_filter($keys, function ($key) {
-			return substr($key, 0, 5) === '_init';
-		});
+		$dbnamePattern = '/(dbname=(.+?)(;|$))/';
 
-		foreach ($keys as $key) {
-			$config = $configs[$key];
+		foreach ($configs as $key => $config) {
+			if (isset($config['init']) && $config['init']) {
+				if (isset($config['dsn'])) {
+					$originalDsn = $config['dsn'];
+					$numOfMatches = preg_match($dbnamePattern, $originalDsn, $matches);
 
-			if (isset($config['dbname'])) {
-				$dbname = $config['dbname'];
-				$dbh = $this->db->getConnection($key);
-				$dbh->exec("CREATE DATABASE `$dbname`");
-				echo "Created database \"$dbname\".\n";
-			} else {
-				echo "\"dbname\" not set in config \"$key\"";
+					if ($numOfMatches) {
+						$shouldBeTrim = $matches[1];
+						$dbname = $matches[2];
+						$newDsn = str_replace($shouldBeTrim, '', $originalDsn);
+
+						$config['dsn'] = $newDsn;
+						$this->db->setConnectionConfig($key, $config);
+
+						$dbh = $this->db->getConnection($key);
+						$sql = "CREATE DATABASE IF NOT EXISTS `$dbname`";
+						$dbh->exec($sql);
+
+						echo "SQL:\n";
+						echo $sql . "\n\n";
+
+						$config['dsn'] = $originalDsn;
+						$this->db->setConnectionConfig($key, $config);
+					} else {
+						echo "Error: \"dbname\" not set in \"dsn\" in config \"$key\".\n\n";
+					}
+				} else {
+					echo "Error: Cannot find \"dsn\" field in config \"$key\".\n\n";
+				}
 			}
 		}
 
 		$this->db->clearConnections();
 
 		$sql = <<<SQL
-CREATE TABLE `migration` (
+CREATE TABLE IF NOT EXISTS `migration` (
 	`filename` varchar(255) NOT NULL,
 	PRIMARY KEY (`filename`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8
 SQL;
 
 		$this->db->getConnection()->exec($sql);
-		echo "Created table \"migration\".\n";
+		echo "SQL:\n";
+		echo $sql . "\n\n";
 	}
 }

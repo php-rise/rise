@@ -85,6 +85,21 @@ PHP;
 			],
 			$db->getConnectionConfig('another')
 		);
+
+		$db->setConnectionConfig('another', [
+			'dsn' => 'mysql:unix_socket=/var/run/mysqld/mysqld.sock;charset=utf8',
+			'username' => 'root',
+			'password' => '',
+		]);
+
+		$this->assertSame(
+			[
+				'dsn' => 'mysql:unix_socket=/var/run/mysqld/mysqld.sock;charset=utf8',
+				'username' => 'root',
+				'password' => '',
+			],
+			$db->getConnectionConfig('another')
+		);
 	}
 
 	public function testPdo() {
