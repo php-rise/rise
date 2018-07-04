@@ -38,13 +38,6 @@ class Path {
 	protected $templatesPath;
 
 	/**
-	 * Path of the directory storing sessions.
-	 *
-	 * @var string
-	 */
-	protected $sessionsPath;
-
-	/**
 	 * Path of the directory storing migration files.
 	 *
 	 * @var string
@@ -68,7 +61,6 @@ class Path {
 		$this->publicPath = $this->projectRootPath . '/public';
 		$this->logsPath = $this->projectRootPath . '/logs';
 		$this->templatesPath = $this->projectRootPath . '/templates';
-		$this->sessionsPath = $this->projectRootPath . '/sessions';
 		$this->migrationsPath = $this->projectRootPath . '/migrations';
 
 		return $this;
@@ -88,10 +80,6 @@ class Path {
 
 	public function getTemplatesPath() {
 		return $this->templatesPath;
-	}
-
-	public function getSessionsPath() {
-		return $this->sessionsPath;
 	}
 
 	public function getMigrationsPath() {

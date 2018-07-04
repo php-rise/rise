@@ -14,7 +14,6 @@ final class PathTest extends TestCase {
 		$this->assertSame($projectRoot . '/public', $path->getPublicPath());
 		$this->assertSame($projectRoot . '/logs', $path->getLogsPath());
 		$this->assertSame($projectRoot . '/templates', $path->getTemplatesPath());
-		$this->assertSame($projectRoot . '/sessions', $path->getSessionsPath());
 		$this->assertSame($projectRoot . '/migrations', $path->getMigrationsPath());
 	}
 }

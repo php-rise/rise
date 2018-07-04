@@ -10,10 +10,9 @@ use Rise\Dispatcher\HandlerFactory;
 use Rise\Dispatcher;
 
 final class DispatcherTest extends TestCase {
-	public function testDispatchMatchedRoute() {
+	public function testDispatch() {
 		$router = $this->createMock(Router::class);
 		$response = $this->createMock(Response::class);
-		$session = $this->createMock(Session::class);
 		$handlerFactory = $this->createMock(HandlerFactory::class);
 		$sessionMiddleware = $this->getMockBuilder(stdClass::class)
 			->setMethods(['setup'])
@@ -35,10 +34,6 @@ final class DispatcherTest extends TestCase {
 		$router->expects($this->once())
 			->method('getMatchedHandler')
 			->willReturn(['App\Middlewares\Session.setup', 'App\Handlers\Home.index']);
-
-		$session->expects($this->once())
-			->method('clearFlash')
-			->will($this->returnSelf());
 
 		$handlerFactory->expects($this->exactly(2))
 			->method('create')
@@ -88,14 +83,13 @@ final class DispatcherTest extends TestCase {
 			->method('send')
 			->will($this->returnSelf());
 
-		$dispatcher = new Dispatcher($router, $response, $session, $handlerFactory);
+		$dispatcher = new Dispatcher($router, $response, $handlerFactory);
 		$dispatcher->dispatch();
 	}
 
 	public function testDispatchUnmatchedRoute() {
 		$router = $this->createMock(Router::class);
 		$response = $this->createMock(Response::class);
-		$session = $this->createMock(Session::class);
 		$handlerFactory = $this->createMock(HandlerFactory::class);
 		$notFoundHandler = $this->getMockBuilder(stdClass::class)
 			->setMethods(['displayErrorPage'])
@@ -127,7 +121,7 @@ final class DispatcherTest extends TestCase {
 			->method('send')
 			->will($this->returnSelf());
 
-		$dispatcher = new Dispatcher($router, $response, $session, $handlerFactory);
+		$dispatcher = new Dispatcher($router, $response, $handlerFactory);
 		$dispatcher->dispatch();
 	}
 }

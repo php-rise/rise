@@ -2,13 +2,10 @@
 namespace Rise;
 
 class Session {
-	const SAVE_HANDLER_FILE = 1;
-	const SAVE_HANDLER_REDIS = 2;
-
 	/**
-	 * @var string
+	 * @var bool
 	 */
-	protected $sessionName = 'rise_session';
+	protected $enabled = false;
 
 	/**
 	 * @var bool
@@ -16,9 +13,28 @@ class Session {
 	protected $started = false;
 
 	/**
-	 * @var int
+	 * Default options for session_start()
+	 * @var array
 	 */
-	protected $saveHandler = 1;
+	protected $defaultStartOptions = [
+		'name' => 'rise_session',
+		'cookie_httponly' => true,
+	];
+
+	/**
+	 * @var array
+	 */
+	protected $startOptions = [];
+
+	/**
+	 * @var string
+	 */
+	protected $flashSessionKey = '__flash';
+
+	/**
+	 * @var string
+	 */
+	protected $nextFlashSessionKey = '__nextFlash';
 
 	/**
 	 * @var string
@@ -28,7 +44,7 @@ class Session {
 	/**
 	 * @var string
 	 */
-	protected $csrfTokenSessionKey = 'csrfToken';
+	protected $csrfTokenSessionKey = '__csrf';
 
 	/**
 	 * @var string
@@ -43,44 +59,21 @@ class Session {
 	public function __construct(Path $path) {
 		$this->path = $path;
 
-		$this->readConfigurations();
-	}
-
-	/**
-	 * Read configuration file.
-	 *
-	 * @return self
-	 */
-	public function readConfigurations() {
-		$file = $this->path->getConfigPath() . '/session.php';
-		if (file_exists($file)) {
-			$configurations = require($file);
-			if (isset($configurations['sessionName'])) {
-				$this->sessionName = $configurations['sessionName'];
-			}
-		}
-		return $this;
+		$this->readConfig();
 	}
 
 	/**
 	 * @return self
 	 */
 	public function start() {
-		if ($this->started) {
-			return;
+		if ($this->enabled && $this->started) {
+			return $this;
 		}
-		switch ($this->saveHandler) {
-		case static::SAVE_HANDLER_FILE:
-			session_save_path($this->path->getSessionsPath());
-			break;
-		case static::SAVE_HANDLER_REDIS:
-			ini_set('session.save_handler', 'redis');
-			ini_set('session.save_path', 'tcp://127.0.0.1:6379');
-			break;
-		}
-		session_name($this->sessionName);
-		session_start();
+
+		$options = $this->startOptions + $this->defaultStartOptions;
+		session_start($options);
 		$this->started = true;
+
 		return $this;
 	}
 
@@ -94,237 +87,51 @@ class Session {
 	}
 
 	/**
+	 * Regnerate session ID and CSRF token.
+	 *
 	 * @return self
 	 */
 	public function regenerate() {
 		if (!$this->started) {
-			$this->start();
+			return $this;
 		}
-		session_regenerate_id(true);
-		return $this;
-	}
 
-	/**
-	 * Get a session value by key.
-	 *
-	 * @param string|array $key
-	 * @return mixed
-	 */
-	public function get($key = null) {
-		if (!$this->started) {
-			$this->start();
-		}
-		if (is_string($key)) {
-			if (isset($_SESSION[$key])) {
-				return $_SESSION[$key];
-			} else {
-				return null;
-			}
-		} elseif (is_array($key)) {
-			$session = &$_SESSION;
-			foreach ($key as $_key) {
-				if (isset($session[$_key])) {
-					$session = &$session[$_key];
-				} else {
-					return null;
-				}
-			}
-			return $session;
-		}
-		return $_SESSION;
-	}
+		session_regenerate_id();
+		$this->generateCsrfToken();
 
-	/**
-	 * Assign a value to a session key.
-	 *
-	 * @param string|array $key When $key is an array, the value will be stored in a multi-dimensional array.
-	 * @param mixed $value
-	 * @return self
-	 */
-	public function set($key, $value) {
-		if (!$this->started) {
-			$this->start();
-		}
-		if (is_string($key)) {
-			$_SESSION[$key] = $value;
-		} elseif (is_array($key)) {
-			$session = &$_SESSION;
-			foreach ($key as $_key) {
-				$session = &$session[$_key];
-			}
-			$session = $value;
-		}
-		return $this;
-	}
-
-	/**
-	 * Push a value to the array assigned by a session key.
-	 *
-	 * @param string $key
-	 * @param mixed $value
-	 * @return self
-	 */
-	public function add($key, $value) {
-		if (!$this->started) {
-			$this->start();
-		}
-		if (is_string($key)) {
-			if (!is_array($_SESSION[$key])) {
-				$_SESSION[$key] = [];
-			}
-			$_SESSION[$key][] = $value;
-		} elseif (is_array($key)) {
-			$session = &$_SESSION;
-			foreach ($key as $_key) {
-				$session = &$session[$_key];
-			}
-			if (!is_array($session)) {
-				$session = [];
-			}
-			$session[] = $value;
-		}
-		return $this;
-	}
-
-	/**
-	 * Unset a session key.
-	 *
-	 * When the key is more than 5 levels, the value will be set to null instead of unsetting it.
-	 *
-	 * @param string|array $key
-	 * @return self
-	 */
-	public function unset($key) {
-		if (!$this->started) {
-			$this->start();
-		}
-		if (is_string($key)) {
-			if (isset($_SESSION[$key])) {
-				unset($_SESSION[$key]);
-			}
-		} elseif (is_array($key)) {
-			switch (count($key)) {
-			case 0:
-				break;
-			case 1:
-				unset($_SESSION[$key[0]]);
-				break;
-			case 2:
-				unset($_SESSION[$key[0]][$key[1]]);
-				break;
-			case 3:
-				unset($_SESSION[$key[0]][$key[1]][$key[2]]);
-				break;
-			case 4:
-				unset($_SESSION[$key[0]][$key[1]][$key[2]][$key[3]]);
-				break;
-			case 5:
-				unset($_SESSION[$key[0]][$key[1]][$key[2]][$key[3]][$key[4]]);
-				break;
-			default:
-				$session = &$_SESSION;
-				foreach ($key as $_key) {
-					if (isset($session[$_key])) {
-						$session = &$session[$_key];
-					} else {
-						$session = null;
-						break;
-					}
-				}
-				if ($session) {
-					$session = null;
-				}
-				break;
-			}
-		}
 		return $this;
 	}
 
 	/**
 	 * Get data from the current flash messages bag.
 	 *
-	 * @param string|array $key
+	 * @param string $key
 	 * @return mixed
 	 */
 	public function getFlash($key) {
-		return $this->get(array_merge(['flashMessageBags', $this->getCurrentFlashBagKey()], (array)$key));
+		return $this->started && isset($_SESSION[$this->flashSessionKey][$key])
+			? $_SESSION[$this->flashSessionKey][$key]
+			: null;
 	}
 
 	/**
-	 * Set data to the other flash messages bag for the next request.
-	 *
-	 * @param string|array $key
-	 * @param mixed $value
-	 * @return self
-	 */
-	public function setFlash($key, $value) {
-		return $this->set(array_merge(['flashMessageBags', $this->getOtherFlashBagKey()], (array)$key), $value);
-	}
-
-	/**
-	 * Add data to the other flash messages bag for the next request.
+	 * Set data to the flash messages bag for the next request.
 	 *
 	 * @param string $key
 	 * @param mixed $value
 	 * @return self
 	 */
-	public function addFlash($key, $value) {
-		return $this->add(array_merge(['flashMessageBags', $this->getOtherFlashBagKey()], (array)$key), $value);
-	}
-
-	/**
-	 * Get the key indicating the current flash messages bag.
-	 *
-	 * The keys are either "flip" or "flop";
-	 *
-	 * @return string
-	 */
-	public function getCurrentFlashBagKey() {
-		$key = $this->get('flashMessageBagCurrentKey');
-		if (!$key) {
-			$key = 'flip';
-			$this->set('flashMessageBagCurrentKey', $key);
+	public function setFlash($key, $value) {
+		if (!$this->started) {
+			return $this;
 		}
-		return $key;
-	}
 
-	/**
-	 * Get the key indicating the other flash messages bag.
-	 *
-	 * The keys are either "flip" or "flop";
-	 *
-	 * @return string
-	 */
-	public function getOtherFlashBagKey() {
-		return $this->getCurrentFlashBagKey() === 'flip' ? 'flop' : 'flip';
-	}
-
-	/**
-	 * Change the key indicating the current flash messages bag to another one.
-	 *
-	 * The keys are either "flip" or "flop";
-	 *
-	 * @return self
-	 */
-	public function toggleCurrentFlashBagKey() {
-		$this->set(
-			'flashMessageBagCurrentKey',
-			$this->get('flashMessageBagCurrentKey') === 'flip' ? 'flop' : 'flip'
-		);
+		$_SESSION[$this->nextFlashSessionKey][$key] = $value;
 		return $this;
 	}
 
 	/**
-	 * Clear current flash message bag.
-	 *
-	 * @return self
-	 */
-	public function clearFlash() {
-		return $this->unset(['flashMessageBags', $this->getCurrentFlashBagKey()]);
-	}
-
-	/**
-	 * Keep flash message after the next request.
+	 * Keep flash message for the next request.
 	 *
 	 * @param string $key
 	 * @return self
@@ -334,12 +141,33 @@ class Session {
 	}
 
 	/**
+	 * Copy the next flash data to current flash. This should be done in the end of request.
+	 *
+	 * @return self
+	 */
+	public function toNextFlash() {
+		if (!$this->started) {
+			return $this;
+		}
+
+		$_SESSION[$this->flashSessionKey] =
+			isset($_SESSION[$this->nextFlashSessionKey])
+			? $_SESSION[$this->nextFlashSessionKey]
+			: [];
+		$_SESSION[$this->nextFlashSessionKey] = [];
+
+		return $this;
+	}
+
+	/**
 	 * Generate CSRF token.
 	 *
 	 * @return string
 	 */
 	public function generateCsrfToken() {
-		return hash("sha512", mt_rand(0, mt_getrandmax()));
+		$token = hash("sha512", mt_rand(0, mt_getrandmax()));
+		$_SESSION[$this->csrfTokenSessionKey] = $token;
+		return $token;
 	}
 
 	/**
@@ -348,10 +176,10 @@ class Session {
 	 * @return string
 	 */
 	public function getCsrfToken() {
-		if (!$this->csrfToken) {
-			$this->csrfToken = $this->generateCsrfToken();
+		if (!isset($_SESSION[$this->csrfTokenSessionKey])) {
+			$this->generateCsrfToken();
 		}
-		return $this->csrfToken;
+		return $_SESSION[$this->csrfTokenSessionKey];
 	}
 
 	/**
@@ -364,28 +192,16 @@ class Session {
 	}
 
 	/**
-	 * Store the token in the session.
-	 *
-	 * @return self
-	 */
-	public function rememberCsrfToken() {
-		if ($this->csrfToken) {
-			$this->set($this->csrfTokenSessionKey, $this->csrfToken);
-		} else {
-			$this->unset($this->csrfTokenSessionKey);
-		}
-		return $this;
-	}
-
-	/**
 	 * Validate with the token stored in session.
 	 *
 	 * @param string $token
 	 * @return bool
 	 */
 	public function validateCsrfToken($token = '') {
-		$csrfToken = $this->get($this->csrfTokenSessionKey);
-		return ($csrfToken && $csrfToken === $token);
+		return (
+			isset($_SESSION[$this->csrfTokenSessionKey])
+			&& $_SESSION[$this->csrfTokenSessionKey] === $token
+		);
 	}
 
 	/**
@@ -395,5 +211,21 @@ class Session {
 	 */
 	public function generateCsrfHtml() {
 		return '<input type="hidden" name="' . $this->csrfTokenFormKey . '" value="' . $this->getCsrfToken() . '">';
+	}
+
+	/**
+	 * Read configuration file.
+	 */
+	protected function readConfig() {
+		$file = $this->path->getConfigPath() . '/session.php';
+
+		if (file_exists($file)) {
+			$config = require($file);
+			$this->enabled = true;
+
+			if (isset($config['options']) && is_array($config['options'])) {
+				$this->startOptions = $config['options'];
+			}
+		}
 	}
 }

@@ -21,11 +21,6 @@ class Dispatcher {
 	protected $response;
 
 	/**
-	 * @var \Rise\Session
-	 */
-	protected $session;
-
-	/**
 	 * @var \Rise\Dispatcher\HandlerFactory
 	 */
 	protected $handlerFactory;
@@ -33,12 +28,10 @@ class Dispatcher {
 	public function __construct(
 		Router $router,
 		Response $response,
-		Session $session,
 		HandlerFactory $handlerFactory
 	) {
 		$this->router = $router;
 		$this->response = $response;
-		$this->session = $session;
 		$this->handlerFactory = $handlerFactory;
 	}
 
@@ -48,22 +41,11 @@ class Dispatcher {
 	 * @return self
 	 */
 	public function dispatch() {
-		if ($this->router->match()) {
-			$this->session->toggleCurrentFlashBagKey();
-			$this->setHandlers($this->router->getMatchedHandler());
-			$this->runHandlers();
-			$this->response
-				->setStatusCode($this->router->getMatchedStatus())
-				->send();
-			$this->session->clearFlash()
-				->rememberCsrfToken();
-		} else {
-			$this->setHandlers($this->router->getMatchedHandler());
-			$this->runHandlers();
-			$this->response
-				->setStatusCode($this->router->getMatchedStatus())
-				->send();
-		}
+		$this->router->match();
+		$this->response->setStatusCode($this->router->getMatchedStatus());
+		$this->setHandlers($this->router->getMatchedHandler());
+		$this->runHandlers();
+		$this->response->send();
 		return $this;
 	}
 
