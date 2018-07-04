@@ -163,10 +163,10 @@ class Container {
 		try {
 			$method = $reflectionClass->getMethod($methodName);
 		} catch (ReflectionException $e) {
-			throw new NotFoundException("Method $className->$methodName not found");
+			throw new NotFoundException("Method $className::$methodName not found");
 		}
 
-		return $this->resolveArgs($method, " when resolving method $className->$methodName", $extraMappings);
+		return $this->resolveArgs($method, " when resolving method $className::$methodName", $extraMappings);
 	}
 
 	/**

@@ -98,11 +98,11 @@ class Scope {
 	 */
 	public function prefix($prefix) {
 		if ($this->hasCalledPrefix) {
-			throw new Exception(get_class($this) . '->prefix() should be called only once.');
+			throw new Exception(get_class($this) . '::prefix() should be called only once.');
 		}
 
 		if ($this->hasCalledOn) {
-			throw new Exception(get_class($this) . '->prefix() should be called before ' . get_class($this) . '->on().');
+			throw new Exception(get_class($this) . '::prefix() should be called before ' . get_class($this) . '::on().');
 		}
 
 		$this->hasCalledPrefix = true;
