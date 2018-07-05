@@ -79,12 +79,12 @@ class UrlGenerator {
 			$chunks = [];
 			$pos = 0;
 			for ($i = 0; $i < $count; $i++) {
-				array_push($chunks, substr($routePath, $pos, $matches[1][$i][1] - $pos));
+				$chunks[] = substr($routePath, $pos, $matches[1][$i][1] - $pos);
 				$size = array_push($chunks, ''); // Empty string is just a placeholder, it can be anything
 				$params[$matches[2][$i][0]] = $size - 1; // Set index
 				$pos = $matches[1][$i][1] + strlen($matches[1][$i][0]);
 			}
-			array_push($chunks, substr($routePath, $pos));
+			$chunks[] = substr($routePath, $pos);
 			$this->compiled[$name] = [
 				'params' => $params,
 				'chunks' => $chunks,

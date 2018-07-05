@@ -51,13 +51,13 @@ class Upload {
 			$files = [];
 
 			foreach ($field['error'] as $subkey => $value) {
-				array_push($files, $this->createFile(
+				$files[] = $this->createFile(
 					$field['name'][$subkey],
 					$field['type'][$subkey],
 					$field['tmp_name'][$subkey],
 					$field['error'][$subkey],
 					$field['size'][$subkey]
-				));
+				);
 			}
 
 			$this->files[$key] = $files;

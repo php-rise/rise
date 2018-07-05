@@ -91,13 +91,13 @@ class Database {
 		$options = [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION];
 
 		if (isset($config['password'])) {
-			array_push($pdoArgs, $config['password']);
+			$pdoArgs[] = $config['password'];
 		}
 
 		if (isset($config['options'])) {
 			$options = $config['options'] + $options;
 		}
-		array_push($pdoArgs, $options);
+		$pdoArgs[] = $options;
 
 		$this->connections[$name] = new PDO(...$pdoArgs);
 

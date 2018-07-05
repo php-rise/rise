@@ -326,11 +326,7 @@ Redirecting to <a href="%1$s">%1$s</a>', htmlspecialchars($url, ENT_QUOTES, 'UTF
 	 * @return self
 	 */
 	public function setHeader($name, $value) {
-		if (is_array($value)) {
-			$this->headers[$name] = $value;
-		} else {
-			$this->headers[$name] = [$value];
-		}
+		$this->headers[$name] = (array)$value;
 		return $this;
 	}
 
@@ -353,7 +349,7 @@ Redirecting to <a href="%1$s">%1$s</a>', htmlspecialchars($url, ENT_QUOTES, 'UTF
 	public function addHeader($name, $value) {
 		if ($this->hasHeader($name)) {
 			if (is_array($value)) {
-				array_push($this->headers[$name], $value);
+				array_push($this->headers[$name], ...$value);
 			} else {
 				$this->headers[$name][] = $value;
 			}

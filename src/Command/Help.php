@@ -37,7 +37,7 @@ class Help extends BaseCommand {
 		}
 		if (is_string($rules)) {
 			list (, $description) = array_pad(explode(' ', $rules, 2), 2, null);
-			array_push($this->helpLines, [$prefix, $description]);
+			$this->helpLines[] = [$prefix, $description];
 			$this->maxPrefixLength = max($this->maxPrefixLength, strlen($prefix));
 			return;
 		}

@@ -209,9 +209,9 @@ class Container {
 				}
 				$paramClassName = $param->getClass()->getName();
 				if (is_array($extraMappings) && array_key_exists($paramClassName, $extraMappings)) {
-					array_push($args, $extraMappings[$paramClassName]);
+					$args[] = $extraMappings[$paramClassName];
 				} else {
-					array_push($args, $this->get($paramClassName));
+					$args[] = $this->get($paramClassName);
 				}
 			}
 		} catch (ReflectionException $e) {
