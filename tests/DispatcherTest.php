@@ -39,16 +39,14 @@ final class DispatcherTest extends TestCase {
 			->method('create')
 			->withConsecutive(
 				[
-					$this->equalTo('App\Middlewares\Session'),
-					$this->equalTo('setup'),
+					$this->equalTo('App\Middlewares\Session.setup'),
 					$this->callback(function ($next) use (&$sessionMiddlewareSetupNext) {
 						$sessionMiddlewareSetupNext = $next;
 						return $next instanceof Closure;
 					})
 				],
 				[
-					$this->equalTo('App\Handlers\Home'),
-					$this->equalTo('index'),
+					$this->equalTo('App\Handlers\Home.index'),
 					$this->callback(function ($next) use (&$homeHandlerIndexNext) {
 						$homeHandlerIndexNext = $next;
 						return $next instanceof Closure;
@@ -56,8 +54,8 @@ final class DispatcherTest extends TestCase {
 				]
 			)
 			->will($this->onConsecutiveCalls(
-				[$sessionMiddleware, [&$sessionMiddlewareSetupNext]],
-				[$homeHandler, [&$homeHandlerIndexNext]]
+				[$sessionMiddleware, 'setup', [&$sessionMiddlewareSetupNext]],
+				[$homeHandler, 'index', [&$homeHandlerIndexNext]]
 			));
 
 		$sessionMiddleware->expects($this->once())
@@ -109,8 +107,8 @@ final class DispatcherTest extends TestCase {
 
 		$handlerFactory->expects($this->once())
 			->method('create')
-			->with($this->equalTo('App\Handlers\NotFoundHandler'), 'displayErrorPage')
-			->willReturn([$notFoundHandler, []]);
+			->with($this->equalTo('App\Handlers\NotFoundHandler.displayErrorPage'))
+			->willReturn([$notFoundHandler, 'displayErrorPage', []]);
 
 		$response->expects($this->once())
 			->method('setStatusCode')

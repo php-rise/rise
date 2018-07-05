@@ -68,13 +68,11 @@ class Dispatcher {
 
 	/**
 	 * @param string $handler
-	 * @return array
+	 * @return array [$instance, $method, $args]
 	 */
 	private function resolveHandler($handler) {
-		list ($class, $method) = explode('.', $handler, 2);
 		$next = $this->getNext();
-		list ($instance, $args) = $this->handlerFactory->create($class, $method, $next);
-		return [$instance, $method, $args];
+		return $this->handlerFactory->create($handler, $next);
 	}
 
 	/**
