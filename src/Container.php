@@ -5,6 +5,7 @@ use ReflectionClass;
 use ReflectionException;
 use Rise\Container\NotFoundException;
 use Rise\Container\NotAllowedException;
+use Rise\Container\CyclicDependencyException;
 
 class Container {
 	/**
@@ -27,6 +28,11 @@ class Container {
 	 */
 	protected $reflectionClasses = [];
 
+	/**
+	 * @var string
+	 */
+	protected $resolvingFrom = '';
+
 	public function __construct() {
 		$this->singletons['Rise\Container'] = $this;
 
@@ -48,17 +54,13 @@ class Container {
 	}
 
 	/**
-	 * Register factory.
+	 * Register a factory. A factory can only inject the container for
+	 * dependency injection. Factories binded by this method can bypass the
+	 * reflection API for better performance.
 	 *
-	 * @param string $factory
-	 * @param string $to Optional
+	 * @param string $class Class name of the factory.
 	 */
-	public function bindFactory($class, $to = null) {
-		if (!empty($to)) {
-			$this->bind($class, $to);
-			$class = $to;
-		}
-
+	public function bindFactory($class) {
 		$this->factories[$class] = null;
 	}
 
@@ -85,10 +87,24 @@ class Container {
 		}
 
 		if (array_key_exists($class, $this->factories)) {
-			return $this->getFactory($class);
+			$instance = $this->getFactory($class);
+		} else {
+			if (empty($this->resolveFrom)) {
+				$this->resolveFrom = $class;
+				$instance = $this->getSingleton($class);
+				$this->resolveFrom = '';
+			} else {
+				if ($this->resolveFrom === $class) {
+					$this->resolveFrom = '';
+					throw new CyclicDependencyException("Cyclic dependency detected when resolving $class");
+				} else {
+					$instance = $this->getSingleton($class);
+				}
+			}
+
 		}
 
-		return $this->getSingleton($class);
+		return $instance;
 	}
 
 	/**

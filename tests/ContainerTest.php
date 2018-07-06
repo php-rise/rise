@@ -4,6 +4,8 @@ namespace Rise\Test;
 use PHPUnit\Framework\TestCase;
 use Rise\Container;
 use Rise\Container\NotFoundException;
+use Rise\Container\NotAllowedException;
+use Rise\Container\CyclicDependencyException;
 use Rise\Test\ContainerTest\Singleton;
 use Rise\Test\ContainerTest\Factory;
 use Rise\Test\ContainerTest\DependencyA;
@@ -11,6 +13,8 @@ use Rise\Test\ContainerTest\DependencyB;
 use Rise\Test\ContainerTest\DependencyC;
 use Rise\Test\ContainerTest\AutoWired;
 use Rise\Test\ContainerTest\MissingDependency;
+use Rise\Test\ContainerTest\PrimitiveTypeParam;
+use Rise\Test\ContainerTest\Cyclic;
 use Rise\Test\ContainerTest\BaseBinding;
 use Rise\Test\ContainerTest\AliasBinding;
 use Rise\Test\ContainerTest\MethodInjectionWithConstructor;
@@ -57,6 +61,18 @@ final class ContainerTest extends TestCase {
 		$this->expectException(NotFoundException::class);
 		$container = new Container();
 		$container->get(MissingDependency::class);
+	}
+
+	public function testNotAllowPrmitiveTypes() {
+		$this->expectException(NotAllowedException::class);
+		$container = new Container();
+		$container->get(PrimitiveTypeParam::class);
+	}
+	
+	public function testCyclicDependency() {
+		$this->expectException(CyclicDependencyException::class);
+		$container = new Container();
+		$container->get(Cyclic::class);
 	}
 
 	public function testAlias() {
