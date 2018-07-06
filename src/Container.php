@@ -62,6 +62,17 @@ class Container {
 	}
 
 	/**
+	 * Register a singleton. It is recommended to let the container to resolve
+	 * the class automatically.
+	 *
+	 * @param string $class
+	 * @param object $instance
+	 */
+	public function bindSingleton($class, $instance) {
+		$this->singletons[$class] = $instance;
+	}
+
+	/**
 	 * Resolve a class.
 	 *
 	 * @param string $class

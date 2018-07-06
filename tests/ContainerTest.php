@@ -66,6 +66,14 @@ final class ContainerTest extends TestCase {
 		$this->assertInstanceOf(AliasBinding::class, $aliasBinding);
 	}
 
+	public function testBindSingleton() {
+		$container = new Container();
+		$singleton = new Singleton();
+		$container->bindSingleton(Singleton::class, $singleton);
+		$instance = $container->get(Singleton::class);
+		$this->assertSame($singleton, $instance);
+	}
+
 	public function testMethodInjectionWithConstructor() {
 		$container = new Container();
 
