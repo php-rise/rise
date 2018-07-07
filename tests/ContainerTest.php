@@ -15,6 +15,8 @@ use Rise\Test\ContainerTest\AutoWired;
 use Rise\Test\ContainerTest\MissingDependency;
 use Rise\Test\ContainerTest\PrimitiveTypeParam;
 use Rise\Test\ContainerTest\Cyclic;
+use Rise\Test\ContainerTest\CyclicA;
+use Rise\Test\ContainerTest\CyclicB;
 use Rise\Test\ContainerTest\BaseBinding;
 use Rise\Test\ContainerTest\AliasBinding;
 use Rise\Test\ContainerTest\MethodInjectionWithConstructor;
@@ -69,10 +71,16 @@ final class ContainerTest extends TestCase {
 		$container->get(PrimitiveTypeParam::class);
 	}
 	
-	public function testCyclicDependency() {
+	public function testCyclicDependencyFromStart() {
 		$this->expectException(CyclicDependencyException::class);
 		$container = new Container();
 		$container->get(Cyclic::class);
+	}
+
+	public function testCyclicDependencyInTheMiddle() {
+		$this->expectException(CyclicDependencyException::class);
+		$container = new Container();
+		$container->get(CyclicA::class);
 	}
 
 	public function testAlias() {

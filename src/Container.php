@@ -29,9 +29,11 @@ class Container {
 	protected $reflectionClasses = [];
 
 	/**
-	 * @var string
+	 * Hash map of class names.
+	 *
+	 * @var array
 	 */
-	protected $resolvingFrom = '';
+	protected $resolvingClasses = [];
 
 	public function __construct() {
 		$this->singletons['Rise\Container'] = $this;
@@ -86,23 +88,19 @@ class Container {
 			$class = $this->aliases[$class];
 		}
 
+		if (isset($this->resolvingClasses[$class])) {
+			throw new CyclicDependencyException("Cyclic dependency detected when resolving $class");
+		}
+
+		$this->resolvingClasses[$class] = true;
+
 		if (array_key_exists($class, $this->factories)) {
 			$instance = $this->getFactory($class);
 		} else {
-			if (empty($this->resolveFrom)) {
-				$this->resolveFrom = $class;
-				$instance = $this->getSingleton($class);
-				$this->resolveFrom = '';
-			} else {
-				if ($this->resolveFrom === $class) {
-					$this->resolveFrom = '';
-					throw new CyclicDependencyException("Cyclic dependency detected when resolving $class");
-				} else {
-					$instance = $this->getSingleton($class);
-				}
-			}
-
+			$instance = $this->getSingleton($class);
 		}
+
+		unset($this->resolvingClasses[$class]);
 
 		return $instance;
 	}
