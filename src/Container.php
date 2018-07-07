@@ -9,21 +9,29 @@ use Rise\Container\CyclicDependencyException;
 
 class Container {
 	/**
+	 * Alias mappings.
+	 *
 	 * @var array
 	 */
 	protected $aliases = [];
 
 	/**
+	 * Cache of singletons.
+	 *
 	 * @var array
 	 */
 	protected $singletons = [];
 
 	/**
+	 * Cache of factories.
+	 *
 	 * @var array
 	 */
 	protected $factories = [];
 
 	/**
+	 * Cache of ReflectionClass instances.
+	 *
 	 * @var array
 	 */
 	protected $reflectionClasses = [];
@@ -38,6 +46,7 @@ class Container {
 	public function __construct() {
 		$this->singletons['Rise\Container'] = $this;
 
+		// Bind default factories.
 		$this->bindFactory('Rise\Container\DynamicFactory');
 		$this->bindFactory('Rise\Request\Upload\FileFactory');
 		$this->bindFactory('Rise\Router\ScopeFactory');
@@ -50,9 +59,11 @@ class Container {
 	 *
 	 * @param string $class
 	 * @param string $to
+	 * @return self
 	 */
 	public function bind($class, $to) {
 		$this->aliases[$class] = $to;
+		return $this;
 	}
 
 	/**
@@ -61,9 +72,11 @@ class Container {
 	 * reflection API for better performance.
 	 *
 	 * @param string $class Class name of the factory.
+	 * @return self
 	 */
 	public function bindFactory($class) {
 		$this->factories[$class] = null;
+		return $this;
 	}
 
 	/**
@@ -72,9 +85,11 @@ class Container {
 	 *
 	 * @param string $class
 	 * @param object $instance
+	 * @return self
 	 */
 	public function bindSingleton($class, $instance) {
 		$this->singletons[$class] = $instance;
+		return $this;
 	}
 
 	/**
@@ -111,7 +126,7 @@ class Container {
 	 * @param string $class
 	 * @param string $method
 	 * @param array $extraMappings Optional
-	 * @return array
+	 * @return array [$instance, (string)$method, (array)$args]
 	 */
 	public function getMethod($class, $method, $extraMappings = []) {
 		if (isset($this->aliases[$class])) {
