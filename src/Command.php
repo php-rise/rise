@@ -66,7 +66,7 @@ class Command {
 	 * @return self
 	 */
 	public function run() {
-		$this->readConfigurations();
+		$this->readConfig();
 		$this->execute($this->arguments);
 		return $this;
 	}
@@ -97,7 +97,7 @@ class Command {
 	/**
 	 * @return self
 	 */
-	protected function readConfigurations() {
+	protected function readConfig() {
 		$file = $this->path->getConfigPath() . '/command.php';
 		if (file_exists($file)) {
 			$configurations = require($file);
