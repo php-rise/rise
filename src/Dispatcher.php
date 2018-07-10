@@ -62,17 +62,17 @@ class Dispatcher {
 			return;
 		}
 
-		list($instance, $method, $args) = $this->resolveHandler($handler);
-		$instance->{$method}(...$args);
+		$this->resolveHandler($handler);
 	}
 
 	/**
 	 * @param string $handler
-	 * @return array [$instance, $method, $args]
+	 * @return mixed
 	 */
 	private function resolveHandler($handler) {
 		$next = $this->getNext();
-		return $this->handlerFactory->create($handler, $next);
+		list($instance, $method, $args) = $this->handlerFactory->create($handler, $next);
+		return $instance->{$method}(...$args);
 	}
 
 	/**
@@ -85,8 +85,7 @@ class Dispatcher {
 		}
 
 		return function () use ($handler) {
-			list ($instance, $method, $args) = $this->resolveHandler($handler);
-			return $instance->{$method}(...$args);
+			return $this->resolveHandler($handler);
 		};
 	}
 }
