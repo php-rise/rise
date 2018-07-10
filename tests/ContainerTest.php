@@ -6,51 +6,75 @@ use Rise\Container;
 use Rise\Container\NotFoundException;
 use Rise\Container\NotAllowedException;
 use Rise\Container\CyclicDependencyException;
+use Rise\Container\InvalidRuleException;
 use Rise\Test\ContainerTest\Singleton;
-use Rise\Test\ContainerTest\Factory;
+use Rise\Test\ContainerTest\AutoWired;
 use Rise\Test\ContainerTest\DependencyA;
 use Rise\Test\ContainerTest\DependencyB;
 use Rise\Test\ContainerTest\DependencyC;
-use Rise\Test\ContainerTest\AutoWired;
+use Rise\Test\ContainerTest\BaseBinding;
+use Rise\Test\ContainerTest\AliasBinding;
+use Rise\Test\ContainerTest\Factory;
+use Rise\Test\ContainerTest\ConfigConstructor;
+use Rise\Test\ContainerTest\ConfigMethod;
+use Rise\Test\ContainerTest\MethodInjectionWithConstructor;
+use Rise\Test\ContainerTest\MethodInjectionWithoutConstructor;
+use Rise\Test\ContainerTest\MethodInjectionWithExtraMappings;
 use Rise\Test\ContainerTest\MissingDependency;
 use Rise\Test\ContainerTest\PrimitiveTypeParam;
 use Rise\Test\ContainerTest\Cyclic;
 use Rise\Test\ContainerTest\CyclicA;
 use Rise\Test\ContainerTest\CyclicB;
-use Rise\Test\ContainerTest\BaseBinding;
-use Rise\Test\ContainerTest\AliasBinding;
-use Rise\Test\ContainerTest\MethodInjectionWithConstructor;
-use Rise\Test\ContainerTest\MethodInjectionWithoutConstructor;
-use Rise\Test\ContainerTest\MethodInjectionWithExtraMappings;
 
 final class ContainerTest extends TestCase {
-	public function testSingleton() {
+	public function testShouldGetTheSameInstance() {
 		$container = new Container();
 
 		$singleton1 = $container->get(Singleton::class);
 		$singleton2 = $container->get(Singleton::class);
 
 		$this->assertSame($singleton1, $singleton2);
-
-		$container->bindFactory(Factory::class);
-		$factory1 = $container->get(Factory::class);
-		$factory2 = $container->get(Factory::class);
-
-		$this->assertSame($factory1, $factory2);
-	}
-
-	public function testContainerInjectionInFactory() {
-		$container = new Container();
-		$container->bindFactory(Factory::class);
-		$factory = $container->get(Factory::class);
-		$this->assertSame($container, $factory->getContainer());
 	}
 
 	public function testAutoWiring() {
 		$container = new Container();
+
 		$autoWired = $container->get(AutoWired::class);
+
 		$this->assertInstanceOf(DependencyA::class, $autoWired->a);
 		$this->assertInstanceOf(DependencyB::class, $autoWired->b);
+	}
+
+	public function testBind() {
+		$container = new Container();
+
+		$container->bind(BaseBinding::class, AliasBinding::class);
+		$aliasBinding = $container->get(BaseBinding::class);
+
+		$this->assertInstanceOf(AliasBinding::class, $aliasBinding);
+	}
+
+	public function testBindFactory() {
+		$container = new Container();
+
+		$container->bindFactory(Factory::class);
+		$factory = $container->get(Factory::class);
+
+		$this->assertSame($container, $factory->getContainer());
+
+		$factoryAgain = $container->get(Factory::class);
+
+		$this->assertSame($factory, $factoryAgain);
+	}
+
+	public function testBindSingleton() {
+		$container = new Container();
+		$singleton = new Singleton();
+
+		$container->bindSingleton(Singleton::class, $singleton);
+		$instance = $container->get(Singleton::class);
+
+		$this->assertSame($singleton, $instance);
 	}
 
 	public function testClassNotFound() {
@@ -70,7 +94,7 @@ final class ContainerTest extends TestCase {
 		$container = new Container();
 		$container->get(PrimitiveTypeParam::class);
 	}
-	
+
 	public function testCyclicDependencyFromStart() {
 		$this->expectException(CyclicDependencyException::class);
 		$container = new Container();
@@ -83,19 +107,44 @@ final class ContainerTest extends TestCase {
 		$container->get(CyclicA::class);
 	}
 
-	public function testAlias() {
+	public function testConfigConstructor() {
 		$container = new Container();
-		$container->bind(BaseBinding::class, AliasBinding::class);
-		$aliasBinding = $container->get(BaseBinding::class);
-		$this->assertInstanceOf(AliasBinding::class, $aliasBinding);
+
+		$rules = [BaseBinding::class => AliasBinding::class];
+		$container->configClass(ConfigConstructor::class, $rules);
+		$instance = $container->get(ConfigConstructor::class);
+
+		$this->assertInstanceOf(AliasBinding::class, $instance->getDep());
 	}
 
-	public function testBindSingleton() {
+	public function testConfigConstructorWithInvalidRule() {
+		$this->expectException(InvalidRuleException::class);
+
 		$container = new Container();
-		$singleton = new Singleton();
-		$container->bindSingleton(Singleton::class, $singleton);
-		$instance = $container->get(Singleton::class);
-		$this->assertSame($singleton, $instance);
+
+		$rules = [BaseBinding::class => 1];
+		$container->configClass(ConfigConstructor::class, $rules);
+		$container->get(ConfigConstructor::class);
+	}
+
+	public function testConfigMethod() {
+		$container = new Container();
+
+		$rules = [BaseBinding::class => AliasBinding::class];
+		$container->configMethod(ConfigMethod::class, 'run', $rules);
+		list ($instance, $args) = $container->getMethod(ConfigMethod::class, 'run');
+
+		$this->assertInstanceOf(AliasBinding::class, $args[0]);
+	}
+
+	public function testConfigMethodWithInvalidRule() {
+		$this->expectException(InvalidRuleException::class);
+
+		$container = new Container();
+
+		$rules = [BaseBinding::class => 1];
+		$container->configMethod(ConfigMethod::class, 'run', $rules);
+		$container->getMethod(ConfigMethod::class, 'run');
 	}
 
 	public function testMethodInjectionWithConstructor() {

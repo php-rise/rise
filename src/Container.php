@@ -1,11 +1,13 @@
 <?php
 namespace Rise;
 
+use Closure;
 use ReflectionClass;
 use ReflectionException;
 use Rise\Container\NotFoundException;
 use Rise\Container\NotAllowedException;
 use Rise\Container\CyclicDependencyException;
+use Rise\Container\InvalidRuleException;
 
 class Container {
 	/**
@@ -35,6 +37,35 @@ class Container {
 	 * @var array
 	 */
 	protected $reflectionClasses = [];
+
+	/**
+	 * Cache of ReflectionMethod instances.
+	 *
+	 * Format: [
+	 *     '<ClassName>' => [
+	 *         '<methodName>' => \ReflectionMethod
+	 *     ]
+	 * ]
+	 *
+	 * @var array
+	 */
+	protected $reflectionMethods = [];
+
+	/**
+	 * Rules for resolving parameters.
+	 *
+	 * Format: [
+	 *     '<ClassName>' => [
+	 *         '<methodName>' => [
+	 *             '<TypeName>' => <ClassName or Closure>,
+	 *             '<paramName>' => <any value>,
+	 *         ]
+	 *     ]
+	 * ]
+	 *
+	 * @var array
+	 */
+	protected $rules = [];
 
 	/**
 	 * Hash map of class names.
@@ -93,6 +124,38 @@ class Container {
 	}
 
 	/**
+	 * Configure constructor parameters of a class.
+	 *
+	 * @param string $class Class name.
+	 * @param array $rules Parameter rules.
+	 * @return self
+	 */
+	public function configClass($class, $rules) {
+		$this->configMethod($class, '__construct', $rules);
+		return $this;
+	}
+
+	/**
+	 * Configure method parameters of a class.
+	 *
+	 * @param string $class Class name.
+	 * @param string $method Method name.
+	 * @param array $rules
+	 * @return self
+	 */
+	public function configMethod($class, $method, $rules) {
+		foreach ($rules as $param => $rule) {
+			if (ctype_upper($param[0])
+				&& (!is_string($rule) && !($rule instanceof Closure))
+			) {
+				throw new InvalidRuleException("Type $param only allowed string or Closure as an extra rule.");
+			}
+		}
+		$this->rules[$class][$method] = $rules;
+		return $this;
+	}
+
+	/**
 	 * Resolve a class.
 	 *
 	 * @param string $class
@@ -121,7 +184,7 @@ class Container {
 	}
 
 	/**
-	 * Resolve a method.
+	 * Resolve a method for method injection.
 	 *
 	 * @param string $class
 	 * @param string $method
@@ -133,7 +196,10 @@ class Container {
 			$class = $this->aliases[$class];
 		}
 
-		return [$this->getSingleton($class), $this->getMethodArgs($class, $method, $extraMappings)];
+		return [
+			$this->getSingleton($class),
+			$this->resolveArgs($class, $method, " when resolving method $class::$method", $extraMappings)
+		];
 	}
 
 	/**
@@ -143,13 +209,10 @@ class Container {
 	 * @return object
 	 */
 	public function getNewInstance($class) {
-		$reflectionClass = $this->getReflectionClass($class);
-		$constructor = $reflectionClass->getConstructor();
-
-		if (is_null($constructor)) {
+		$args = $this->resolveArgs($class, '__construct', " when constructing $class");
+		if (empty($args)) {
 			$instance = new $class;
 		} else {
-			$args = $this->resolveArgs($constructor, " when constructing $class");
 			$instance = new $class(...$args);
 		}
 
@@ -190,27 +253,6 @@ class Container {
 	}
 
 	/**
-	 * Resolve method parameters for method injection.
-	 *
-	 * @param string $className
-	 * @param string $methodName
-	 * @param array $extraMappings Optional
-	 * @param \ReflectionClass $reflectionClass Optional
-	 * @return array
-	 */
-	protected function getMethodArgs($className, $methodName, $extraMappings = []) {
-		$reflectionClass = $this->getReflectionClass($className);
-
-		try {
-			$method = $reflectionClass->getMethod($methodName);
-		} catch (ReflectionException $e) {
-			throw new NotFoundException("Method $className::$methodName not found");
-		}
-
-		return $this->resolveArgs($method, " when resolving method $className::$methodName", $extraMappings);
-	}
-
-	/**
 	 * Create and cache a ReflectionClass.
 	 *
 	 * @param string $className
@@ -232,25 +274,87 @@ class Container {
 	}
 
 	/**
+	 * Create and cache a ReflectionMethod.
+	 *
+	 * @param string $className
+	 * @param string $methodName
+	 * @return \ReflectionMethod
+	 */
+	protected function getReflectionMethod($className, $methodName = '__construct') {
+		if (isset($this->reflectionMethods[$className])
+			&& array_key_exists($methodName, $this->reflectionMethods[$className])
+		) {
+			return $this->reflectionMethods[$className][$methodName];
+		}
+
+		try {
+			$reflectionClass = $this->getReflectionClass($className);
+			if ($methodName === '__construct') {
+				$reflectionMethod = $reflectionClass->getConstructor();
+			} else {
+				$reflectionMethod = $reflectionClass->getMethod($methodName);
+			}
+			$this->reflectionMethods[$className][$methodName] = $reflectionMethod;
+		} catch (ReflectionException $e) {
+			throw new NotFoundException("Method $className::$methodName is not found");
+		}
+
+		return $reflectionMethod;
+	}
+	/**
 	 * Resolve parameters of ReflectionMethod.
 	 *
-	 * @param \ReflectionMethod $reflectionMethod
+	 * @param string $className
+	 * @param string $methodName
 	 * @param string $errorMessageSuffix Optional
 	 * @param array $extraMappings Optional
 	 * @return array
 	 */
-	protected function resolveArgs($reflectionMethod, $errorMessageSuffix = '', $extraMappings = []) {
+	protected function resolveArgs($className, $methodName, $errorMessageSuffix = '', $extraMappings = []) {
+		$reflectionMethod = $this->getReflectionMethod($className, $methodName);
+
+		if (is_null($reflectionMethod) && $methodName === '__construct') {
+			return [];
+		}
+
+		if (!is_array($extraMappings)) {
+			$extraMappings = [];
+		}
+
+		if (isset($this->rules[$className][$methodName])) {
+			$extraMappings += $this->rules[$className][$methodName];
+		}
+
 		$args = [];
 
 		try {
 			foreach ($reflectionMethod->getParameters() as $param) {
+				if (!empty($extraMappings)) {
+					$paramName = $param->getName();
+
+					// Add argument according to parameter name.
+					if (array_key_exists($paramName, $extraMappings)) {
+						$args[] = $extraMappings[$paramName];
+						continue;
+					}
+				}
+
 				$paramType = $param->getType();
+
+				// Disallow primitive types.
 				if ($paramType->isBuiltin()) {
 					throw new NotAllowedException("Parameter type \"$paramType\" is not allowed" . $errorMessageSuffix);
 				}
+
 				$paramClassName = $param->getClass()->getName();
-				if (is_array($extraMappings) && array_key_exists($paramClassName, $extraMappings)) {
-					$args[] = $extraMappings[$paramClassName];
+
+				// Resolve by class.
+				if (array_key_exists($paramClassName, $extraMappings)) {
+					if (is_string($extraMappings[$paramClassName])) {
+						$args[] = $this->get($extraMappings[$paramClassName]);
+					} else {
+						$args[] = $extraMappings[$paramClassName];
+					}
 				} else {
 					$args[] = $this->get($paramClassName);
 				}
