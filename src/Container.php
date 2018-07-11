@@ -2,6 +2,7 @@
 namespace Rise;
 
 use Closure;
+use Exception;
 use ReflectionClass;
 use ReflectionException;
 use Rise\Container\NotFoundException;
@@ -122,6 +123,30 @@ class Container {
 	public function bindSingleton($class, $instance) {
 		$this->singletons[$class] = $instance;
 		return $this;
+	}
+
+	/**
+	 * Check if the class is resolvable.
+	 *
+	 * @param string $class
+	 * @return bool
+	 */
+	public function has($class) {
+		if (isset($this->singletons[$class])) {
+			return true;
+		}
+
+		if (isset($this->aliases[$class])) {
+			$class = $this->aliases[$class];
+		}
+
+		try {
+			$this->getReflectionClass($class);
+		} catch (Exception $e) {
+			return false;
+		}
+
+		return true;
 	}
 
 	/**

@@ -79,6 +79,21 @@ final class ContainerTest extends TestCase {
 		$this->assertSame($singleton, $instance);
 	}
 
+	public function testHas() {
+		$container = new Container();
+		$singleton = new Singleton();
+
+		$container->bindSingleton(Singleton::class, $singleton);
+
+		$this->assertTrue($container->has(Singleton::class));
+		$this->assertTrue($container->has(AutoWired::class));
+		$this->assertFalse($container->has(BaseBinding::class));
+
+		$container->bind(BaseBinding::class, AliasBinding::class);
+
+		$this->assertTrue($container->has(BaseBinding::class));
+	}
+
 	public function testNotClass() {
 		$this->expectException(NotInstantiableException::class);
 		$container = new Container();

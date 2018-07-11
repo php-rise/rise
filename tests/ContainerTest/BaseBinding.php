@@ -1,5 +1,5 @@
 <?php
 namespace Rise\Test\ContainerTest;
 
-class BaseBinding {
+abstract class BaseBinding {
 }
