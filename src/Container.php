@@ -5,6 +5,7 @@ use Closure;
 use ReflectionClass;
 use ReflectionException;
 use Rise\Container\NotFoundException;
+use Rise\Container\NotInstantiableException;
 use Rise\Container\NotAllowedException;
 use Rise\Container\CyclicDependencyException;
 use Rise\Container\InvalidRuleException;
@@ -209,6 +210,10 @@ class Container {
 	 * @return object
 	 */
 	public function getNewInstance($class) {
+		if (isset($this->aliases[$class])) {
+			$class = $this->aliases[$class];
+		}
+
 		$args = $this->resolveArgs($class, '__construct', " when constructing $class");
 		if (empty($args)) {
 			$instance = new $class;
@@ -265,10 +270,15 @@ class Container {
 
 		try {
 			$reflectionClass = new ReflectionClass($className);
-			$this->reflectionClasses[$className] = $reflectionClass;
 		} catch (ReflectionException $e) {
 			throw new NotFoundException("Class $className is not found");
 		}
+
+		if (!$reflectionClass->isInstantiable()) {
+			throw new NotInstantiableException("$className is not an instantiable class");
+		}
+
+		$this->reflectionClasses[$className] = $reflectionClass;
 
 		return $reflectionClass;
 	}

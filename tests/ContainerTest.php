@@ -4,6 +4,7 @@ namespace Rise\Test;
 use PHPUnit\Framework\TestCase;
 use Rise\Container;
 use Rise\Container\NotFoundException;
+use Rise\Container\NotInstantiableException;
 use Rise\Container\NotAllowedException;
 use Rise\Container\CyclicDependencyException;
 use Rise\Container\InvalidRuleException;
@@ -15,16 +16,17 @@ use Rise\Test\ContainerTest\DependencyC;
 use Rise\Test\ContainerTest\BaseBinding;
 use Rise\Test\ContainerTest\AliasBinding;
 use Rise\Test\ContainerTest\Factory;
-use Rise\Test\ContainerTest\ConfigConstructor;
-use Rise\Test\ContainerTest\ConfigMethod;
-use Rise\Test\ContainerTest\MethodInjectionWithConstructor;
-use Rise\Test\ContainerTest\MethodInjectionWithoutConstructor;
-use Rise\Test\ContainerTest\MethodInjectionWithExtraMappings;
+use Rise\Test\ContainerTest\NotClassInterface;
 use Rise\Test\ContainerTest\MissingDependency;
 use Rise\Test\ContainerTest\PrimitiveTypeParam;
 use Rise\Test\ContainerTest\Cyclic;
 use Rise\Test\ContainerTest\CyclicA;
 use Rise\Test\ContainerTest\CyclicB;
+use Rise\Test\ContainerTest\ConfigConstructor;
+use Rise\Test\ContainerTest\ConfigMethod;
+use Rise\Test\ContainerTest\MethodInjectionWithConstructor;
+use Rise\Test\ContainerTest\MethodInjectionWithoutConstructor;
+use Rise\Test\ContainerTest\MethodInjectionWithExtraMappings;
 
 final class ContainerTest extends TestCase {
 	public function testShouldGetTheSameInstance() {
@@ -75,6 +77,12 @@ final class ContainerTest extends TestCase {
 		$instance = $container->get(Singleton::class);
 
 		$this->assertSame($singleton, $instance);
+	}
+
+	public function testNotClass() {
+		$this->expectException(NotInstantiableException::class);
+		$container = new Container();
+		$container->get(NotClassInterface::class);
 	}
 
 	public function testClassNotFound() {
