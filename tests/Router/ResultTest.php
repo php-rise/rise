@@ -10,13 +10,9 @@ final class ResultTest extends TestCase {
 
 		$this->assertSame(404, $result->getStatus());
 
-		$result->setHandler(['Handler.handle']);
+		$result->setStatus(200);
 
 		$this->assertSame(200, $result->getStatus());
-
-		$result->setHandler(['Handler.handle'], 302);
-
-		$this->assertSame(302, $result->getStatus());
 	}
 
 	public function testHandler() {

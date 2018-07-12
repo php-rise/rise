@@ -26,6 +26,10 @@ final class ScopeTest extends TestCase {
 			->method('setHandler')
 			->with($this->equalTo(['Handler.handle']));
 
+		$result->expects($this->once())
+			->method('setStatus')
+			->with($this->equalTo(200));
+
 		$scope = new Scope($request, $result, $urlGenerator);
 
 		$scope->on('GET', '/products', 'Handler.handle');
@@ -47,6 +51,10 @@ final class ScopeTest extends TestCase {
 		$result->expects($this->once())
 			->method('setHandler')
 			->with($this->equalTo(['Handler.handle']));
+
+		$result->expects($this->once())
+			->method('setStatus')
+			->with($this->equalTo(200));
 
 		$result->expects($this->once())
 			->method('setParams')
@@ -78,6 +86,10 @@ final class ScopeTest extends TestCase {
 			->method('setHandler')
 			->with($this->equalTo(['Product.show']));
 
+		$result->expects($this->once())
+			->method('setStatus')
+			->with($this->equalTo(200));
+
 		$scope = new Scope($request, $result, $urlGenerator);
 
 		$scope->on('GET', '/products/{id}', 'Product.show');
@@ -101,6 +113,10 @@ final class ScopeTest extends TestCase {
 			->method('setHandler')
 			->with($this->equalTo(['App\Handlers\Handler.handle']));
 
+		$result->expects($this->once())
+			->method('setStatus')
+			->with($this->equalTo(200));
+
 		$scope = new Scope($request, $result, $urlGenerator);
 
 		$scope->namespace('App\Handlers');
@@ -123,6 +139,10 @@ final class ScopeTest extends TestCase {
 		$result->expects($this->once())
 			->method('setHandler')
 			->with($this->equalTo(['App\Handlers\Handler.handle']));
+
+		$result->expects($this->once())
+			->method('setStatus')
+			->with($this->equalTo(200));
 
 		$scope = new Scope($request, $result, $urlGenerator);
 
@@ -148,6 +168,10 @@ final class ScopeTest extends TestCase {
 		$result->expects($this->once())
 			->method('setHandler')
 			->with($this->equalTo(['App\Controllers\Handler.handle']));
+
+		$result->expects($this->once())
+			->method('setStatus')
+			->with($this->equalTo(200));
 
 		$scope = new Scope($request, $result, $urlGenerator);
 
@@ -175,6 +199,10 @@ final class ScopeTest extends TestCase {
 			->method('setHandler')
 			->with($this->equalTo(['Handler.handle']));
 
+		$result->expects($this->once())
+			->method('setStatus')
+			->with($this->equalTo(200));
+
 		$scope = new Scope($request, $result, $urlGenerator);
 
 		$scope->namespace('App\Handlers');
@@ -201,6 +229,10 @@ final class ScopeTest extends TestCase {
 			->method('setHandler')
 			->with($this->equalTo(['Middleware.run', 'Handler.handle']));
 
+		$result->expects($this->once())
+			->method('setStatus')
+			->with($this->equalTo(200));
+
 		$scope = new Scope($request, $result, $urlGenerator);
 
 		$scope->use(['Middleware.run']);
@@ -223,6 +255,10 @@ final class ScopeTest extends TestCase {
 		$result->expects($this->once())
 			->method('setHandler')
 			->with($this->equalTo(['App\Handlers\Middleware.run', 'App\Handlers\Handler.handle']));
+
+		$result->expects($this->once())
+			->method('setStatus')
+			->with($this->equalTo(200));
 
 		$scope = new Scope($request, $result, $urlGenerator);
 
@@ -248,6 +284,10 @@ final class ScopeTest extends TestCase {
 			->method('setHandler')
 			->with($this->equalTo(['Middleware.run', 'Handler.handle']));
 
+		$result->expects($this->once())
+			->method('setStatus')
+			->with($this->equalTo(200));
+
 		$scope = new Scope($request, $result, $urlGenerator);
 
 		$scope->use(['Middleware.run']);
@@ -272,6 +312,10 @@ final class ScopeTest extends TestCase {
 		$result->expects($this->once())
 			->method('setHandler')
 			->with($this->equalTo(['Handler.handle']));
+
+		$result->expects($this->once())
+			->method('setStatus')
+			->with($this->equalTo(200));
 
 		$result->expects($this->once())
 			->method('setParams')
@@ -301,6 +345,10 @@ final class ScopeTest extends TestCase {
 			->with($this->equalTo(['Handler.handle']));
 
 		$result->expects($this->once())
+			->method('setStatus')
+			->with($this->equalTo(200));
+
+		$result->expects($this->once())
 			->method('setParams')
 			->with($this->equalTo(['pid' => '1', 'cid' => '2']));
 
@@ -328,6 +376,9 @@ final class ScopeTest extends TestCase {
 		$result->expects($this->never())
 			->method('setHandler');
 
+		$result->expects($this->never())
+			->method('setStatus');
+
 		$scope = new Scope($request, $result, $urlGenerator);
 
 		$scope->on('GET', '/product', 'Handler.handle');
@@ -346,6 +397,9 @@ final class ScopeTest extends TestCase {
 
 		$result->expects($this->never())
 			->method('setHandler');
+
+		$result->expects($this->never())
+			->method('setStatus');
 
 		$scope = new Scope($request, $result, $urlGenerator);
 
@@ -367,6 +421,9 @@ final class ScopeTest extends TestCase {
 
 		$result->expects($this->never())
 			->method('setHandler');
+
+		$result->expects($this->never())
+			->method('setStatus');
 
 		$result->expects($this->never())
 			->method('setParams');
@@ -392,6 +449,9 @@ final class ScopeTest extends TestCase {
 
 		$result->expects($this->never())
 			->method('setHandler');
+
+		$result->expects($this->never())
+			->method('setStatus');
 
 		$result->expects($this->never())
 			->method('setParams');

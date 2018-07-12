@@ -181,6 +181,7 @@ class Scope {
 				}
 
 				$this->result->setHandler($handlers);
+				$this->result->setStatus(200);
 				$this->result->setParams($this->params);
 			}
 		}

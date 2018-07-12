@@ -26,6 +26,13 @@ class Result {
 	}
 
 	/**
+	 * @param int $status
+	 */
+	public function setStatus($status) {
+		$this->status = $status;
+	}
+
+	/**
 	 * @return bool
 	 */
 	public function hasHandler() {
@@ -42,8 +49,7 @@ class Result {
 	/**
 	 * @param mixed $handler
 	 */
-	public function setHandler($handler, $status = 200) {
-		$this->status = $status;
+	public function setHandler($handler) {
 		$this->handler = $handler;
 	}
 
