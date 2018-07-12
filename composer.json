@@ -28,7 +28,7 @@
 			"Rise\\Test\\": "tests/"
 		},
 		"files": [
-			"tests/override.php"
+			"tests/functions-override.php"
 		]
 	},
 	"scripts": {
