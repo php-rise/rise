@@ -5,93 +5,105 @@ use PHPUnit\Framework\TestCase;
 use Rise\Request;
 use Rise\Request\Upload;
 use Rise\Request\Upload\File;
+use Rise\Router\Result;
 
 final class RequestTest extends TestCase {
 	public function setUp() {
-		$_SERVER['REQUEST_URI'] = '/products/15';
+		$_SERVER['REQUEST_URI'] = '/products/15?buy=1';
 		$_SERVER['REQUEST_METHOD'] = 'GET';
+		$_SERVER['HTTP_X_REQUESTED_WITH'] = 'XMLHttpRequest';
 
 		$_GET['page'] = '8';
 		$_POST['password'] = 'secret';
-
-		$_POST['input'] = 'from_input';
-		$_GET['input'] = 'from_query';
-		$_GET['param'] = 'from_query';
-		$_GET['query'] = 'from_query';
 	}
 
 	public function tearDown() {
 		unset($_SERVER['REQUEST_URI']);
 		unset($_SERVER['REQUEST_METHOD']);
+		unset($_SERVER['HTTP_X_REQUESTED_WITH']);
 
 		unset($_GET['page']);
 		unset($_POST['password']);
-
-		unset($_POST['input']);
-		unset($_GET['input']);
-		unset($_GET['param']);
-		unset($_GET['query']);
 	}
 
-	public function testRequestPath() {
+	public function testPath() {
 		$upload = $this->createMock(Upload::class);
+		$result = $this->createMock(Result::class);
 
-		$request = new Request($upload);
+		$request = new Request($upload, $result);
 
-		$this->assertSame('/products/15', $request->getRequestPath());
+		$this->assertSame('/products/15', $request->getPath());
 
-		$request->setRequestPath('/products/16');
-		$this->assertSame('/products/16', $request->getRequestPath());
+		$request->setPath('/products/16');
+		$this->assertSame('/products/16', $request->getPath());
 	}
 
 	public function testMethod() {
 		$upload = $this->createMock(Upload::class);
+		$result = $this->createMock(Result::class);
 
-		$request = new Request($upload);
+		$request = new Request($upload, $result);
 
 		$this->assertSame('GET', $request->getMethod());
 		$this->assertTrue($request->isMethod('GET'));
 		$this->assertFalse($request->isMethod('POST'));
 	}
 
-	public function testParams() {
+	public function testHeader() {
 		$upload = $this->createMock(Upload::class);
+		$result = $this->createMock(Result::class);
 
-		$request = new Request($upload);
-		$request->setParams([
-			'id' => '11',
-			'cid' => '22',
-		]);
+		$request = new Request($upload, $result);
 
-		$this->assertSame([
-			'id' => '11',
-			'cid' => '22',
-		], $request->getParams());
-		$this->assertSame('11', $request->getParam('id'));
-		$this->assertSame('22', $request->getParam('cid'));
+		$this->assertSame('XMLHttpRequest', $request->getHeader('X-Requested-With'));
+		$this->assertNull($request->getHeader('X-Some-Thing'));
+	}
+
+	public function testParam() {
+		$upload = $this->createMock(Upload::class);
+		$result = $this->createMock(Result::class);
+
+		$result->expects($this->any())
+			->method('getParam')
+			->will($this->returnCallback(function ($key) {
+				$params = ['id' => '1'];
+				if (isset($params[$key])) {
+					return $params[$key];
+				}
+				return null;
+			}));
+
+		$request = new Request($upload, $result);
+
+		$this->assertSame('1', $request->getParam('id'));
 		$this->assertNull($request->getParam('NotExists'));
 	}
 
 	public function testQuery() {
 		$upload = $this->createMock(Upload::class);
+		$result = $this->createMock(Result::class);
 
-		$request = new Request($upload);
+		$request = new Request($upload, $result);
 
 		$this->assertSame('8', $request->getQuery('page'));
 		$this->assertNull($request->getQuery('NotExists'));
+		$this->assertSame('SomeValue', $request->getQuery('NotExists', 'SomeValue'));
 	}
 
 	public function testInput() {
 		$upload = $this->createMock(Upload::class);
+		$result = $this->createMock(Result::class);
 
-		$request = new Request($upload);
+		$request = new Request($upload, $result);
 
 		$this->assertSame('secret', $request->getInput('password'));
 		$this->assertNull($request->getInput('NotExists'));
+		$this->assertSame('SomeValue', $request->getInput('NotExists', 'SomeValue'));
 	}
 
 	public function testFile() {
 		$upload = $this->createMock(Upload::class);
+		$result = $this->createMock(Result::class);
 
 		$file = new File();
 
@@ -99,35 +111,8 @@ final class RequestTest extends TestCase {
 			->method('getFile')
 			->willReturn($file);
 
-		$request = new Request($upload);
+		$request = new Request($upload, $result);
 
 		$this->assertInstanceOf(File::class, $request->getFile('file'));
-	}
-
-	public function testGetPriority() {
-		$upload = $this->createMock(Upload::class);
-
-		$upload->expects($this->once())
-			->method('getFile')
-			->will($this->returnCallback(function ($key) {
-				if ($key === 'input'
-					|| $key === 'param'
-					|| $key === 'query'
-					|| $key === 'file'
-				) {
-					return $this->createMock(File::class);
-				}
-			}));
-
-		$request = new Request($upload);
-		$request->setParams([
-			'input' => 'from_param',
-			'param' => 'from_param',
-		]);
-
-		$this->assertSame('from_input', $request->get('input'));
-		$this->assertSame('from_param', $request->get('param'));
-		$this->assertSame('from_query', $request->get('query'));
-		$this->assertInstanceOf(File::class, $request->get('file'));
 	}
 }

@@ -44,8 +44,9 @@ class Session {
 			|| $request->isMethod('PUT')
 			|| $request->isMethod('DELETE')
 		) {
-			$token = $request->get($this->sessionService->getCsrfTokenFormKey());
-			if (!$this->sessionService->validateCsrfToken($token)) {
+			$token = $request->getInput($this->sessionService->getCsrfTokenFormKey())
+				?: $request->getHeader($this->sessionService->getCsrfTokenHeaderKey());
+			if (empty($token) || !$this->sessionService->validateCsrfToken($token)) {
 				$response = $this->response;
 				$response->setStatusCode(403);
 				$response->setContentType('text/plain');

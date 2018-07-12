@@ -88,14 +88,6 @@ PHP;
 			->method('getStatus')
 			->willReturn(200);
 
-		$result->expects($this->once())
-			->method('getParams')
-			->willReturn(['id' => 15]);
-
-		$request->expects($this->once())
-			->method('setParams')
-			->with($this->equalTo(['id' => 15]));
-
 		$router = new Router($scopeFactory, $result, $path, $request);
 		$matched = $router->match();
 

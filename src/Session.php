@@ -52,6 +52,11 @@ class Session {
 	protected $csrfTokenFormKey = '_csrf';
 
 	/**
+	 * @var string
+	 */
+	protected $csrfTokenHeaderKey = 'X-CSRF';
+
+	/**
 	 * @var \Rise\Path
 	 */
 	protected $path;
@@ -192,6 +197,15 @@ class Session {
 	}
 
 	/**
+	 * Get CSRF token header key.
+	 *
+	 * @return string
+	 */
+	public function getCsrfTokenHeaderKey() {
+		return $this->csrfTokenHeaderKey;
+	}
+
+	/**
 	 * Validate with the token stored in session.
 	 *
 	 * @param string $token
@@ -211,6 +225,16 @@ class Session {
 	 */
 	public function generateCsrfHtml() {
 		return '<input type="hidden" name="' . $this->csrfTokenFormKey . '" value="' . $this->getCsrfToken() . '">';
+	}
+
+	/**
+	 * Generate meta HTML.
+	 *
+	 * @return string
+	 */
+	public function generateCsrfMeta() {
+		return '<meta name="csrf-header" content="' . $this->csrfTokenHeaderKey . '">' .
+			'<meta name="csrf-token" content="' . $this->getCsrfToken() . '">';
 	}
 
 	/**

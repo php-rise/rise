@@ -29,7 +29,7 @@ class Result {
 	 * @return bool
 	 */
 	public function hasHandler() {
-		return !is_null($this->handler);
+		return !empty($this->handler);
 	}
 
 	/**
@@ -59,5 +59,19 @@ class Result {
 	 */
 	public function setParams($params) {
 		$this->params = $params;
+	}
+
+	/**
+	 * Get a specific parameter.
+	 *
+	 * @param string $key
+	 * @param mixed $defaultValue
+	 * @return mixed
+	 */
+	public function getParam($key, $defaultValue = null) {
+		if (array_key_exists($key, $this->params)) {
+			return $this->params[$key];
+		}
+		return $defaultValue;
 	}
 }

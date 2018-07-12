@@ -2,19 +2,13 @@
 namespace Rise;
 
 use Rise\Request\Upload;
+use Rise\Router\Result as RouterResult;
 
 class Request {
 	/**
-	 * Request URI. Same as $_SERVER['REQUEST_URI']
-	 *
-	 * @var string
+	 * Request path.
 	 */
-	protected $requestUri = '';
-
-	/**
-	 * Request path, default is same as request URI, but can be changed in runtime.
-	 */
-	protected $requestPath = '';
+	protected $path = '';
 
 	/**
 	 * HTTP method.
@@ -40,21 +34,18 @@ class Request {
 	/**
 	 * @var \Rise\Upload
 	 */
-	protected $httpUpload;
-
-	public function __construct(Upload $upload) {
-		$this->requestUri = $_SERVER['REQUEST_URI'];
-		$this->method = $_SERVER['REQUEST_METHOD'];
-		$this->httpUpload = $upload;
-	}
+	protected $upload;
 
 	/**
-	 * Get request URI.
-	 *
-	 * @return string
+	 * @var \Rise\Router\Result
 	 */
-	public function getRequestUri() {
-		return $this->requestUri;
+	protected $routerResult;
+
+	public function __construct(Upload $upload, RouterResult $routerResult) {
+		$this->upload = $upload;
+		$this->routerResult = $routerResult;
+		$this->path = strtok($_SERVER['REQUEST_URI'], '?');
+		$this->method = $_SERVER['REQUEST_METHOD'];
 	}
 
 	/**
@@ -62,19 +53,18 @@ class Request {
 	 *
 	 * @return string
 	 */
-	public function getRequestPath() {
-		return $this->requestPath ? $this->requestPath : $this->getRequestUri();
+	public function getPath() {
+		return $this->path;
 	}
 
 	/**
 	 * Set request path.
 	 *
-	 * @param string $requestPath
+	 * @param string $path
 	 * @return self
 	 */
-	public function setRequestPath($requestPath) {
-		$this->requestPath = $requestPath;
-		return $this;
+	public function setPath($path) {
+		$this->path = $path;
 	}
 
 	/**
@@ -123,23 +113,33 @@ class Request {
 	}
 
 	/**
+	 * Get header value.
+	 *
+	 * @param string $key
+	 * @param mixed $defaultValue
+	 * @return mixed
+	 */
+	public function getHeader($key, $defaultValue = null) {
+		if (empty($key)) {
+			return $defaultValue;
+		}
+
+		$key = 'HTTP_' . strtoupper(str_replace('-', '_', $key));
+
+		if (isset($_SERVER[$key])) {
+			return $_SERVER[$key];
+		}
+
+		return $defaultValue;
+	}
+
+	/**
 	 * Get Url parameters.
 	 *
 	 * @return array
 	 */
 	public function getParams() {
-		return $this->params;
-	}
-
-	/**
-	 * Set Url parameters.
-	 *
-	 * @param array $params
-	 * @return self
-	 */
-	public function setParams($params = []) {
-		$this->params = $params;
-		return $this;
+		return $this->routerResult->getParams();
 	}
 
 	/**
@@ -150,10 +150,7 @@ class Request {
 	 * @return mixed
 	 */
 	public function getParam($key, $defaultValue = null) {
-		if (array_key_exists($key, $this->params)) {
-			return $this->params[$key];
-		}
-		return $defaultValue;
+		return $this->routerResult->getParam($key, $defaultValue);
 	}
 
 	/**
@@ -191,28 +188,6 @@ class Request {
 	 * @return \Rise\Request\Upload\File|\Rise\Request\Upload\File[]|null
 	 */
 	public function getFile($key) {
-		return $this->httpUpload->getFile($key);
-	}
-
-	/**
-	 * @param string $key
-	 * @param mixed $defaultValue
-	 * @return mixed
-	 */
-	public function get($key, $defaultValue = null) {
-		$result = $this->getInput($key);
-		if ($result === null) {
-			$result = $this->getParam($key);
-		}
-		if ($result === null) {
-			$result = $this->getQuery($key);
-		}
-		if ($result === null) {
-			$result = $this->getFile($key);
-		}
-		if ($result === null) {
-			$result = $defaultValue;
-		}
-		return $result;
+		return $this->upload->getFile($key);
 	}
 }

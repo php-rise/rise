@@ -44,21 +44,14 @@ class Router {
 	 */
 	protected $path;
 
-	/**
-	 * @var \Rise\Request
-	 */
-	protected $request;
-
 	public function __construct(
 		ScopeFactory $scopeFactory,
 		Result $result,
-		Path $path,
-		Request $request
+		Path $path
 	) {
 		$this->scopeFactory = $scopeFactory;
 		$this->result = $result;
 		$this->path = $path;
-		$this->request = $request;
 
 		$this->readConfig();
 	}
@@ -87,7 +80,6 @@ class Router {
 		if ($this->result->hasHandler()) {
 			$result = true;
 			$this->matchedHandler = $this->result->getHandler();
-			$this->request->setParams($this->result->getParams());
 		} else {
 			$this->matchedHandler = $this->notFoundHandler;
 		}

@@ -19,7 +19,7 @@ final class ScopeTest extends TestCase {
 			->willReturn(true);
 
 		$request->expects($this->once())
-			->method('getRequestPath')
+			->method('getPath')
 			->willReturn('/products');
 
 		$result->expects($this->once())
@@ -41,7 +41,7 @@ final class ScopeTest extends TestCase {
 			->willReturn(true);
 
 		$request->expects($this->once())
-			->method('getRequestPath')
+			->method('getPath')
 			->willReturn('/products/15');
 
 		$result->expects($this->once())
@@ -67,7 +67,7 @@ final class ScopeTest extends TestCase {
 			->willReturn(true);
 
 		$request->expects($this->once())
-			->method('getRequestPath')
+			->method('getPath')
 			->willReturn('/products/15');
 
 		$result->expects($this->exactly(2))
@@ -94,7 +94,7 @@ final class ScopeTest extends TestCase {
 			->willReturn(true);
 
 		$request->expects($this->once())
-			->method('getRequestPath')
+			->method('getPath')
 			->willReturn('/products');
 
 		$result->expects($this->once())
@@ -117,7 +117,7 @@ final class ScopeTest extends TestCase {
 			->willReturn(true);
 
 		$request->expects($this->once())
-			->method('getRequestPath')
+			->method('getPath')
 			->willReturn('/products');
 
 		$result->expects($this->once())
@@ -142,7 +142,7 @@ final class ScopeTest extends TestCase {
 			->willReturn(true);
 
 		$request->expects($this->once())
-			->method('getRequestPath')
+			->method('getPath')
 			->willReturn('/products');
 
 		$result->expects($this->once())
@@ -168,7 +168,7 @@ final class ScopeTest extends TestCase {
 			->willReturn(true);
 
 		$request->expects($this->once())
-			->method('getRequestPath')
+			->method('getPath')
 			->willReturn('/products');
 
 		$result->expects($this->once())
@@ -194,7 +194,7 @@ final class ScopeTest extends TestCase {
 			->willReturn(true);
 
 		$request->expects($this->once())
-			->method('getRequestPath')
+			->method('getPath')
 			->willReturn('/products');
 
 		$result->expects($this->once())
@@ -217,7 +217,7 @@ final class ScopeTest extends TestCase {
 			->willReturn(true);
 
 		$request->expects($this->once())
-			->method('getRequestPath')
+			->method('getPath')
 			->willReturn('/products');
 
 		$result->expects($this->once())
@@ -241,7 +241,7 @@ final class ScopeTest extends TestCase {
 			->willReturn(true);
 
 		$request->expects($this->once())
-			->method('getRequestPath')
+			->method('getPath')
 			->willReturn('/products');
 
 		$result->expects($this->once())
@@ -266,7 +266,7 @@ final class ScopeTest extends TestCase {
 			->willReturn(true);
 
 		$request->expects($this->exactly(2))
-			->method('getRequestPath')
+			->method('getPath')
 			->willReturn('/products/1/comments/2');
 
 		$result->expects($this->once())
@@ -293,7 +293,7 @@ final class ScopeTest extends TestCase {
 			->willReturn(true);
 
 		$request->expects($this->exactly(2))
-			->method('getRequestPath')
+			->method('getPath')
 			->willReturn('/products/1/comments/2');
 
 		$result->expects($this->once())
@@ -322,7 +322,7 @@ final class ScopeTest extends TestCase {
 			->willReturn(true);
 
 		$request->expects($this->once())
-			->method('getRequestPath')
+			->method('getPath')
 			->willReturn('/products');
 
 		$result->expects($this->never())
@@ -342,7 +342,7 @@ final class ScopeTest extends TestCase {
 			->willReturn(false);
 
 		$request->expects($this->never())
-			->method('getRequestPath');
+			->method('getPath');
 
 		$result->expects($this->never())
 			->method('setHandler');
@@ -362,7 +362,7 @@ final class ScopeTest extends TestCase {
 			->willReturn(true);
 
 		$request->expects($this->once())
-			->method('getRequestPath')
+			->method('getPath')
 			->willReturn('/products/1/comments/2');
 
 		$result->expects($this->never())
@@ -387,7 +387,7 @@ final class ScopeTest extends TestCase {
 			->willReturn(true);
 
 		$request->expects($this->once())
-			->method('getRequestPath')
+			->method('getPath')
 			->willReturn('/products/1/comments/2');
 
 		$result->expects($this->never())
@@ -410,7 +410,7 @@ final class ScopeTest extends TestCase {
 		$urlGenerator = $this->createMock(UrlGenerator::class);
 
 		$request->expects($this->once())
-			->method('getRequestPath')
+			->method('getPath')
 			->willReturn('/products/1/comments/2');
 
 		$this->expectException(Exception::class);
@@ -431,7 +431,7 @@ final class ScopeTest extends TestCase {
 			->willReturn(true);
 
 		$request->expects($this->once())
-			->method('getRequestPath')
+			->method('getPath')
 			->willReturn('/products');
 
 		$urlGenerator->expects($this->once())
@@ -456,7 +456,7 @@ final class ScopeTest extends TestCase {
 			->willReturn(true);
 
 		$request->expects($this->atLeastOnce())
-			->method('getRequestPath')
+			->method('getPath')
 			->willReturn('/products/1/comments/2');
 
 		$urlGenerator->expects($this->once())
@@ -482,7 +482,7 @@ final class ScopeTest extends TestCase {
 			->willReturn(true);
 
 		$request->expects($this->once())
-			->method('getRequestPath')
+			->method('getPath')
 			->willReturn('/products');
 
 		$urlGenerator->expects($this->once())

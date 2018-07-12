@@ -149,5 +149,13 @@ PHP;
 			'<input type="hidden" name="' . $formKey . '" value="' . $token . '">',
 			$session->generateCsrfHtml()
 		);
+
+		$header = $session->getCsrfTokenHeaderKey();
+
+		$this->assertSame(
+			'<meta name="csrf-header" content="' . $header . '">' .
+			'<meta name="csrf-token" content="' . $token . '">',
+			$session->generateCsrfMeta()
+		);
 	}
 }

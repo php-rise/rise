@@ -262,9 +262,9 @@ class Scope {
 
 		if ($numOfRouteMatches === 0) { // plain string
 			if ($toEnd) {
-				$requestPathPartial = substr($this->request->getRequestPath(), $this->requestPathOffset);
+				$requestPathPartial = substr($this->request->getPath(), $this->requestPathOffset);
 			} else {
-				$requestPathPartial = substr($this->request->getRequestPath(), $this->requestPathOffset, strlen($routePathPartial));
+				$requestPathPartial = substr($this->request->getPath(), $this->requestPathOffset, strlen($routePathPartial));
 			}
 
 			if ($routePathPartial === $requestPathPartial) {
@@ -290,7 +290,7 @@ class Scope {
 			}
 			$pattern .= '#';
 
-			$requestPathPartial = substr($this->request->getRequestPath(), $this->requestPathOffset);
+			$requestPathPartial = substr($this->request->getPath(), $this->requestPathOffset);
 
 			$numOfPathMatches = preg_match($pattern, $requestPathPartial, $pathMatches);
 
