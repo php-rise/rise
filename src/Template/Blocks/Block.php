@@ -131,6 +131,15 @@ class Block {
 	}
 
 	/**
+	 * Helper function for generating CSRF meta HTML.
+	 *
+	 * @return string
+	 */
+	public function csrfMeta() {
+		return $this->session->generateCsrfMeta();
+	}
+
+	/**
 	 * Helper function for getting CSRF form key.
 	 *
 	 * @return string

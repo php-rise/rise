@@ -287,4 +287,34 @@ PHTML;
 
 		$block->url('product.show', ['id' => 1]);
 	}
+
+	public function testCsrfHelper() {
+		$path = $this->createMock(Path::class);
+		$template = $this->createMock(Template::class);
+		$urlGenerator = $this->createMock(UrlGenerator::class);
+		$session = $this->createMock(Session::class);
+
+		$session->expects($this->once())
+			->method('generateCsrfHtml')
+			->willReturn('<some csrf input tag>');
+
+		$block = new Block($path, $template, $urlGenerator, $session);
+
+		$this->assertSame('<some csrf input tag>', $block->csrf());
+	}
+
+	public function testCsrfMetaHelper() {
+		$path = $this->createMock(Path::class);
+		$template = $this->createMock(Template::class);
+		$urlGenerator = $this->createMock(UrlGenerator::class);
+		$session = $this->createMock(Session::class);
+
+		$session->expects($this->once())
+			->method('generateCsrfMeta')
+			->willReturn('<some csrf meta tags>');
+
+		$block = new Block($path, $template, $urlGenerator, $session);
+
+		$this->assertSame('<some csrf meta tags>', $block->csrfMeta());
+	}
 }
