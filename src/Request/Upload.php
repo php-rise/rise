@@ -5,73 +5,64 @@ use Rise\Request\Upload\FileFactory;
 
 class Upload {
 	/**
-	 * $_FILES data with rearranged order of the first two levels of array keys.
+	 * File instances.
 	 *
 	 * @var array|null
 	 */
-	protected $filesData = null;
-
-	/**
-	 * File instances.
-	 *
-	 * @var array
-	 */
-	protected $files = [];
+	protected $files = null;
 
 	/**
 	 * @var \Rise\Request\Upload\FileFactory
 	 */
-	protected $fileFactory;
+	private $fileFactory;
 
 	public function __construct(FileFactory $fileFactory) {
 		$this->fileFactory = $fileFactory;
 	}
 
 	/**
-	 * Get uploaded file or files.
+	 * Get uploaded files.
 	 *
 	 * @param string $key
-	 * @return \Rise\Request\Upload\File|\Rise\Request\Upload\File[]|null
+	 * @return array
 	 */
-	public function getFile($key) {
-		if (isset($this->files[$key])) {
-			return $this->files[$key];
+	public function getFiles() {
+		if (is_null($this->files)) {
+			$this->generateFiles();
 		}
 
-		if (!isset($_FILES[$key])
-			|| !isset($_FILES[$key]['error'])
-		) {
-			return null;
+		return $this->files;
+	}
+
+	protected function generateFiles() {
+		if (empty($_FILES)) {
+			$this->files = [];
+			return;
 		}
 
-		$field = $_FILES[$key];
+		$files = [];
 
-		// Check if it is multiple files upload
-		if (is_array($field['error'])) {
-			$files = [];
-
-			foreach ($field['error'] as $subkey => $value) {
-				$files[] = $this->createFile(
-					$field['name'][$subkey],
-					$field['type'][$subkey],
-					$field['tmp_name'][$subkey],
-					$field['error'][$subkey],
-					$field['size'][$subkey]
+		foreach ($_FILES as $key => $field) {
+			if (is_int($field['error'])) {
+				$files[$key] = $this->createFile(
+					isset($field['name']) ? $field['name'] : null,
+					isset($field['type']) ? $field['type'] : null,
+					$field['tmp_name'],
+					$field['error'],
+					$field['size']
+				);
+			} else if (is_array($field['error'])) {
+				$files[$key] = $this->normalize(
+					isset($field['name']) ? $field['name'] : null,
+					isset($field['type']) ? $field['type'] : null,
+					$field['tmp_name'],
+					$field['error'],
+					$field['size']
 				);
 			}
-
-			$this->files[$key] = $files;
-		} else {
-			$this->files[$key] = $this->createFile(
-				$field['name'],
-				$field['type'],
-				$field['tmp_name'],
-				$field['error'],
-				$field['size']
-			);
 		}
 
-		return $this->files[$key];
+		$this->files = $files;
 	}
 
 	/**
@@ -82,7 +73,7 @@ class Upload {
 	 * @param int $size
 	 * @return \Rise\Request\Upload\File
 	 */
-	protected function createFile($name, $type, $tmpName, $error, $size) {
+	private function createFile($name, $type, $tmpName, $error, $size) {
 		$file = $this->fileFactory->create();
 		$file->setName($name);
 		$file->setType($type);
@@ -90,5 +81,39 @@ class Upload {
 		$file->setError($error);
 		$file->setSize($size);
 		return $file;
+	}
+
+	/**
+	 * @param array $nameTree
+	 * @param array $typeTree
+	 * @param array $tmpNameTree
+	 * @param array $errorTree
+	 * @param array $sizeTree
+	 * @return array
+	 */
+	private function normalize($nameTree, $typeTree, $tmpNameTree, $errorTree, $sizeTree) {
+		$files = [];
+
+		foreach ($errorTree as $key => $field) {
+			if (is_array($field)) {
+				$files[$key] = $this->normalize(
+					isset($nameTree[$key]) ? $nameTree[$key] : null,
+					isset($typeTree[$key]) ? $typeTree[$key] : null,
+					$tmpNameTree[$key],
+					$field,
+					$sizeTree[$key]
+				);
+			} else {
+				$files[$key] = $this->createFile(
+					isset($nameTree[$key]) ? $nameTree[$key] : null,
+					isset($typeTree[$key]) ? $typeTree[$key] : null,
+					$tmpNameTree[$key],
+					$field,
+					$sizeTree[$key]
+				);
+			}
+		}
+
+		return $files;
 	}
 }

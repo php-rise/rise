@@ -43,58 +43,59 @@ final class UploadTest extends TestCase {
 				30000,
 			],
 		];
+
+		$_FILES['form'] = [
+			'name' => [
+				'user' => [
+					'photo' => 'photo.png',
+				]
+			],
+			'type' => [
+				'user' => [
+					'photo' => 'image/png',
+				]
+			],
+			'tmp_name' => [
+				'user' => [
+					'photo' => '/tmp/php123123',
+				]
+			],
+			'error' => [
+				'user' => [
+					'photo' => 0,
+				]
+			],
+			'size' => [
+				'user' => [
+					'photo' => 1000,
+				]
+			],
+		];
 	}
 
 	public function tearDown() {
 		unset($_FILES['file']);
 		unset($_FILES['files']);
+		unset($_FILES['form']);
 	}
 
-	public function testNotExistsField() {
+	public function testGetFiles() {
 		$factory = $this->createMock(FileFactory::class);
 
-		$upload = new Upload($factory);
-
-		$this->assertNull($upload->getFile('notExists'));
-	}
-
-	public function testGetSingleFile() {
-		$factory = $this->createMock(FileFactory::class);
-
-		$factory->expects($this->once())
+		$factory->expects($this->exactly(5))
 			->method('create')
 			->will($this->returnCallback(function () {
 				return $this->createMock(File::class);
 			}));
 
 		$upload = new Upload($factory);
+		$files = $upload->getFiles();
 
-		$file = $upload->getFile('file');
-		$fileClone = $upload->getFile('file');
-
-		$this->assertSame($file, $fileClone);
-		$this->assertInstanceOf(File::class, $file);
-	}
-
-	public function testGetMultipleFiles() {
-		$factory = $this->createMock(FileFactory::class);
-
-		$factory->expects($this->exactly(3))
-			->method('create')
-			->will($this->returnCallback(function () {
-				return $this->createMock(File::class);
-			}));
-
-		$upload = new Upload($factory);
-
-		$files = $upload->getFile('files');
-		$filesClone = $upload->getFile('files');
-
-		$this->assertSame($files, $filesClone);
-		$this->assertTrue(is_array($files));
-		$this->assertCount(3, $files);
-		foreach ($files as $file) {
-			$this->assertInstanceOf(File::class, $file);
-		}
+		$this->assertInstanceOf(File::class, $files['file']);
+		$this->assertInstanceOf(File::class, $files['files'][0]);
+		$this->assertInstanceOf(File::class, $files['files'][1]);
+		$this->assertInstanceOf(File::class, $files['files'][2]);
+		$this->assertCount(3, $files['files']);
+		$this->assertInstanceOf(File::class, $files['form']['user']['photo']);
 	}
 }

@@ -4,7 +4,6 @@ namespace Rise\Test;
 use PHPUnit\Framework\TestCase;
 use Rise\Request;
 use Rise\Request\Upload;
-use Rise\Request\Upload\File;
 use Rise\Router\Result;
 
 final class RequestTest extends TestCase {
@@ -63,10 +62,15 @@ final class RequestTest extends TestCase {
 		$upload = $this->createMock(Upload::class);
 		$result = $this->createMock(Result::class);
 
+		$params = ['id' => '1'];
+
+		$result->expects($this->any())
+			->method('getParams')
+			->willReturn($params);
+
 		$result->expects($this->any())
 			->method('getParam')
-			->will($this->returnCallback(function ($key) {
-				$params = ['id' => '1'];
+			->will($this->returnCallback(function ($key) use ($params) {
 				if (isset($params[$key])) {
 					return $params[$key];
 				}
@@ -75,6 +79,7 @@ final class RequestTest extends TestCase {
 
 		$request = new Request($upload, $result);
 
+		$this->assertSame($params, $request->getParams());
 		$this->assertSame('1', $request->getParam('id'));
 		$this->assertNull($request->getParam('NotExists'));
 	}
@@ -101,18 +106,17 @@ final class RequestTest extends TestCase {
 		$this->assertSame('SomeValue', $request->getInput('NotExists', 'SomeValue'));
 	}
 
-	public function testFile() {
+	public function testFiles() {
 		$upload = $this->createMock(Upload::class);
 		$result = $this->createMock(Result::class);
 
-		$file = new File();
+		$files = [];
 
 		$upload->expects($this->once())
-			->method('getFile')
-			->willReturn($file);
+			->method('getFiles')
+			->willReturn($files);
 
 		$request = new Request($upload, $result);
-
-		$this->assertInstanceOf(File::class, $request->getFile('file'));
+		$this->assertSame($files, $request->getFiles());
 	}
 }

@@ -184,10 +184,9 @@ class Request {
 	/**
 	 * Get uploaded file.
 	 *
-	 * @param string $key
-	 * @return \Rise\Request\Upload\File|\Rise\Request\Upload\File[]|null
+	 * @return mixed
 	 */
-	public function getFile($key) {
-		return $this->upload->getFile($key);
+	public function getFiles() {
+		return $this->upload->getFiles();
 	}
 }

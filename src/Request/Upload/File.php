@@ -124,36 +124,59 @@ class File {
 	}
 
 	/**
-	 * @param string $directory
-	 * @param string $prefix Optional, prefix that is not included in the returned path
+	 * Move file.
+	 *
+	 * @param string $destination
 	 * @return string|null Path of the moved file.
 	 */
-	public function moveToDirectory($directory, $prefix = '') {
+	public function moveTo($destination) {
 		if (!$this->isValid()) {
 			return null;
 		}
 
-		$fileFullName = $this->name;
-		$path = $directory . '/' . $fileFullName;
-		if (file_exists($path)) {
-			$filename = pathinfo($fileFullName, PATHINFO_FILENAME);
-			$extension = pathinfo($fileFullName, PATHINFO_EXTENSION);
-			$count = 0;
-			do {
-				$fileFullName = $filename . '-' . ++$count . '.' . $extension;
-				$path = $directory . '/' . $fileFullName;
-			} while (file_exists($path));
-		}
-
+		$path = $this->generateFinalPath($destination);
 		$moved = move_uploaded_file($this->tmpName, $path);
+
 		if (!$moved) {
 			return null;
 		}
 
-		if (!empty($prefix) && substr($directory, 0, strlen($prefix)) === $prefix) {
-			$directory = substr($directory, strlen($prefix));
+		return $path;
+	}
+
+	/**
+	 * Move file to a directory.
+	 *
+	 * @param string $directory
+	 * @return string|null Path of the moved file.
+	 */
+	public function moveToDirectory($directory) {
+		return $this->moveTo($directory . '/' . $this->name);
+	}
+
+	/**
+	 * @param string $filename
+	 * @return string
+	 */
+	protected function generateFinalPath($filePath) {
+		if (!file_exists($filePath)) {
+			return $filePath;
 		}
 
-		return $directory . '/' . $fileFullName;
+		$directory = dirname($filePath);
+		$fileFullName = basename($filePath);
+		$filename = pathinfo($fileFullName, PATHINFO_FILENAME) . '-';
+		$extension = pathinfo($fileFullName, PATHINFO_EXTENSION);
+
+		if (!empty($extension)) {
+			$extension = '.' . $extension;
+		}
+
+		$count = 0;
+		do {
+			$finalPath = $directory . '/' . $filename . ++$count . $extension;
+		} while (file_exists($finalPath));
+
+		return $finalPath;
 	}
 }
