@@ -64,11 +64,11 @@ final class RequestTest extends TestCase {
 
 		$params = ['id' => '1'];
 
-		$result->expects($this->any())
+		$result->expects($this->once())
 			->method('getParams')
 			->willReturn($params);
 
-		$result->expects($this->any())
+		$result->expects($this->exactly(2))
 			->method('getParam')
 			->will($this->returnCallback(function ($key) use ($params) {
 				if (isset($params[$key])) {

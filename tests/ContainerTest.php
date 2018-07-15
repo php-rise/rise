@@ -47,6 +47,19 @@ final class ContainerTest extends TestCase {
 		$this->assertInstanceOf(DependencyB::class, $autoWired->b);
 	}
 
+	public function testGetNewInstance() {
+		$container = new Container();
+
+		$instance1 = $container->get(AutoWired::class);
+		$instance2 = $container->getNewInstance(AutoWired::class);
+
+		$this->assertInstanceOf(AutoWired::class, $instance1);
+		$this->assertInstanceOf(AutoWired::class, $instance2);
+		$this->assertNotSame($instance1, $instance2);
+		$this->assertSame($instance1->a, $instance2->a);
+		$this->assertSame($instance1->b, $instance2->b);
+	}
+
 	public function testBind() {
 		$container = new Container();
 
