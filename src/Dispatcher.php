@@ -1,7 +1,6 @@
 <?php
 namespace Rise;
 
-use Rise\Response;
 use Rise\Dispatcher\HandlerFactory;
 
 class Dispatcher {
@@ -11,58 +10,39 @@ class Dispatcher {
 	protected $handlers = [];
 
 	/**
-	 * @var \Rise\Router
-	 */
-	protected $router;
-
-	/**
-	 * @var \Rise\Response
-	 */
-	protected $response;
-
-	/**
 	 * @var \Rise\Dispatcher\HandlerFactory
 	 */
 	protected $handlerFactory;
 
-	public function __construct(
-		Router $router,
-		Response $response,
-		HandlerFactory $handlerFactory
-	) {
-		$this->router = $router;
-		$this->response = $response;
+	public function __construct(HandlerFactory $handlerFactory) {
 		$this->handlerFactory = $handlerFactory;
 	}
 
 	/**
-	 * Dispatch current request and send response.
+	 * Dispatch handlers.
 	 *
 	 * @return self
 	 */
 	public function dispatch() {
-		$this->router->match();
-		$this->response->setStatusCode($this->router->getMatchedStatus());
-		$this->setHandlers($this->router->getMatchedHandler());
-		$this->runHandlers();
-		$this->response->send();
-		return $this;
-	}
-
-	/**
-	 * @param string|array $handlers
-	 */
-	protected function setHandlers($handlers) {
-		$this->handlers = (array)$handlers;
-	}
-
-	protected function runHandlers() {
 		$handler = current($this->handlers);
 		if (!$handler) {
 			return;
 		}
 
 		$this->resolveHandler($handler);
+
+		return $this;
+	}
+
+	/**
+	 * Set handlers.
+	 *
+	 * @param string|array $handlers
+	 * return self
+	 */
+	public function setHandlers($handlers) {
+		$this->handlers = (array)$handlers;
+		return $this;
 	}
 
 	/**

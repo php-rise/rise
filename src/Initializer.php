@@ -30,8 +30,15 @@ class Initializer {
 	 * @return self
 	 */
 	public function run() {
-		$this->container->get(Router::class)->buildRoutes();
-		$this->container->get(Dispatcher::class)->dispatch();
+		$router = $this->container->get(Router::class);
+		$dispatcher = $this->container->get(Dispatcher::class);
+		$response = $this->container->get(Response::class);
+
+		$router->buildRoutes()->match();
+		$response->setStatusCode($router->getMatchedStatus());
+		$dispatcher->setHandlers($router->getMatchedHandler())->dispatch();
+		$response->send();
+
 		return $this;
 	}
 }
