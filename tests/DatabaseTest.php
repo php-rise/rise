@@ -85,6 +85,7 @@ PHP;
 			],
 			$db->getConnectionConfig('another')
 		);
+		$this->assertNull($db->getConnectionConfig('notExists'));
 
 		$db->setConnectionConfig('another', [
 			'dsn' => 'mysql:unix_socket=/var/run/mysqld/mysqld.sock;charset=utf8',

@@ -8,7 +8,6 @@ use Rise\Router\ScopeFactory;
 use Rise\Router\Scope;
 use Rise\Router\Result;
 use Rise\Path;
-use Rise\Request;
 
 final class RouterTest extends TestCase {
 	private $root;
@@ -51,7 +50,6 @@ PHP;
 		$scopeFactory = $this->createMock(ScopeFactory::class);
 		$result = $this->createMock(Result::class);
 		$path = $this->createMock(Path::class);
-		$request = $this->createMock(Request::class);
 		$scope = $this->createMock(Scope::class);
 
 		$path->expects($this->any())
@@ -62,7 +60,7 @@ PHP;
 			->method('create')
 			->willReturn($scope);
 
-		$router = new Router($scopeFactory, $result, $path, $request);
+		$router = new Router($scopeFactory, $result, $path);
 		$router->buildRoutes();
 	}
 
@@ -70,7 +68,6 @@ PHP;
 		$scopeFactory = $this->createMock(ScopeFactory::class);
 		$result = $this->createMock(Result::class);
 		$path = $this->createMock(Path::class);
-		$request = $this->createMock(Request::class);
 
 		$path->expects($this->any())
 			->method('getConfigPath')
@@ -88,7 +85,7 @@ PHP;
 			->method('getStatus')
 			->willReturn(200);
 
-		$router = new Router($scopeFactory, $result, $path, $request);
+		$router = new Router($scopeFactory, $result, $path);
 		$matched = $router->match();
 
 		$this->assertTrue($matched);
@@ -100,7 +97,6 @@ PHP;
 		$scopeFactory = $this->createMock(ScopeFactory::class);
 		$result = $this->createMock(Result::class);
 		$path = $this->createMock(Path::class);
-		$request = $this->createMock(Request::class);
 
 		$path->expects($this->any())
 			->method('getConfigPath')
@@ -114,7 +110,7 @@ PHP;
 			->method('getStatus')
 			->willReturn(404);
 
-		$router = new Router($scopeFactory, $result, $path, $request);
+		$router = new Router($scopeFactory, $result, $path);
 		$matched = $router->match();
 
 		$this->assertFalse($matched);
