@@ -2,7 +2,7 @@
 	"name": "php-rise/rise",
 	"description": "PHP Rise Framework",
 	"type": "library",
-	"license": "proprietary",
+	"license": "MIT",
 	"authors": [
 		{
 			"name": "Jack Wan",
