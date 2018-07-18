@@ -3,6 +3,8 @@
 	"description": "PHP Rise Framework",
 	"type": "library",
 	"license": "MIT",
+	"keywords": ["framework"],
+	"homepage": "https://php-rise.github.io",
 	"authors": [
 		{
 			"name": "Jack Wan",
