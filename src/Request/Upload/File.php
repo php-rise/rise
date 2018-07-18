@@ -168,7 +168,7 @@ class File {
 		$filename = pathinfo($fileFullName, PATHINFO_FILENAME) . '-';
 		$extension = pathinfo($fileFullName, PATHINFO_EXTENSION);
 
-		if (!empty($extension)) {
+		if ($extension !== '') {
 			$extension = '.' . $extension;
 		}
 

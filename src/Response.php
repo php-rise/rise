@@ -525,9 +525,7 @@ Redirecting to <a href="%1$s">%1$s</a>', htmlspecialchars($url, ENT_QUOTES, 'UTF
 			break;
 
 		case self::MODE_FILE:
-			if (!empty($this->body)) {
-				readfile($this->body);
-			}
+			readfile($this->body);
 			break;
 
 		case self::MODE_STREAM:

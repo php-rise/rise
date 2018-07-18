@@ -44,7 +44,7 @@ class Locale {
 	 */
 	public function extractFromPath(Closure $next) {
 		$locale = $this->request->getParam('locale');
-		if ($this->checkLocale($locale)) {
+		if ($this->translation->hasLocale($locale)) {
 			$this->translation->setLocale($locale);
 			$next();
 		} else {
@@ -54,14 +54,13 @@ class Locale {
 
 	public function extractFromTld(Closure $next) {
 		$host = $this->request->getHost();
-		$locale = '';
 
 		if ($host) {
 			$parts = explode('.', $host);
 			$locale = end($parts);
 		}
 
-		if ($this->checkLocale($locale)) {
+		if (isset($locale) && $this->translation->hasLocale($locale)) {
 			$this->translation->setLocale($locale);
 			$next();
 		} else {
@@ -71,7 +70,6 @@ class Locale {
 
 	public function extractFromSubdomain(Closure $next) {
 		$host = $this->request->getHost();
-		$locale = '';
 
 		if ($host) {
 			$parts = explode('.', $host);
@@ -80,16 +78,12 @@ class Locale {
 			}
 		}
 
-		if ($this->checkLocale($locale)) {
+		if (isset($locale) && $this->translation->hasLocale($locale)) {
 			$this->translation->setLocale($locale);
 			$next();
 		} else {
 			$this->notFound();
 		}
-	}
-
-	protected function checkLocale($locale) {
-		return !empty($locale) && $this->translation->hasLocale($locale);
 	}
 
 	protected function notFound() {

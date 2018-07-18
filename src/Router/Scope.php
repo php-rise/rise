@@ -176,7 +176,7 @@ class Scope {
 					}
 				}
 
-				if (!empty($this->middlewares)) {
+				if ($this->middlewares) {
 					$handlers = array_merge($this->middlewares, $handlers);
 				}
 
@@ -186,7 +186,7 @@ class Scope {
 			}
 		}
 
-		if (!empty($name)) {
+		if ($name) {
 			$this->urlGenerator->add($name, $this->prefix . $path);
 		}
 

@@ -352,9 +352,7 @@ class Container {
 			return [];
 		}
 
-		if (!is_array($extraMappings)) {
-			$extraMappings = [];
-		}
+		$extraMappings = (array)$extraMappings;
 
 		if (isset($this->rules[$className][$methodName])) {
 			$extraMappings += $this->rules[$className][$methodName];
@@ -364,7 +362,7 @@ class Container {
 
 		try {
 			foreach ($reflectionMethod->getParameters() as $param) {
-				if (!empty($extraMappings)) {
+				if ($extraMappings) {
 					$paramName = $param->getName();
 
 					// Add argument according to parameter name.

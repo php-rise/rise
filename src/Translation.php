@@ -103,9 +103,7 @@ class Translation {
 			$locale = $this->getlocale();
 		}
 
-		if (!empty($locale)
-			&& isset($this->translations[$locale][$key])
-		) {
+		if (isset($this->translations[$locale][$key])) {
 			return $this->translations[$locale][$key];
 		}
 

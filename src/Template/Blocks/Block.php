@@ -105,7 +105,7 @@ class Block {
 		if (is_array($data)) {
 			$this->extendedData = $data;
 		}
-		if (is_string($paramName) && !empty($paramName)) {
+		if (is_string($paramName) && $paramName) {
 			$this->extendedParamName = $paramName;
 		}
 	}
