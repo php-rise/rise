@@ -95,7 +95,7 @@ class Translation {
 	 *
 	 * @param string $key Translation identifier.
 	 * @param string $defaultValue Optional.
-	 * @param string $localeCode Optional. Specify the locale of translation result.
+	 * @param string $locale Optional. Specify the locale of translation result.
 	 * @return string
 	 */
 	public function translate($key, $defaultValue = '', $locale = null) {

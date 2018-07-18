@@ -8,6 +8,7 @@ use Rise\Template;
 use Rise\Path;
 use Rise\Router\UrlGenerator;
 use Rise\Session;
+use Rise\Translation;
 
 final class BlockTest extends TestCase {
 	private $root;
@@ -77,12 +78,13 @@ PHTML;
 		$template = $this->createMock(Template::class);
 		$urlGenerator = $this->createMock(UrlGenerator::class);
 		$session = $this->createMock(Session::class);
+		$translation = $this->createMock(Translation::class);
 
 		$path->expects($this->any())
 			->method('getTemplatesPath')
 			->willReturn(vfsStream::url('root/templates'));
 
-		$block = new Block($path, $template, $urlGenerator, $session);
+		$block = new Block($path, $template, $urlGenerator, $session, $translation);
 
 		$block->setTemplate('blocks/simple');
 
@@ -94,6 +96,7 @@ PHTML;
 		$template = $this->createMock(Template::class);
 		$urlGenerator = $this->createMock(UrlGenerator::class);
 		$session = $this->createMock(Session::class);
+		$translation = $this->createMock(Translation::class);
 
 		$path->expects($this->any())
 			->method('getTemplatesPath')
@@ -103,7 +106,7 @@ PHTML;
 			->method('render')
 			->with($this->equalTo('blocks/partials/modal'));
 
-		$block = new Block($path, $template, $urlGenerator, $session);
+		$block = new Block($path, $template, $urlGenerator, $session, $translation);
 
 		$block->setTemplate('blocks/include');
 		$block->render();
@@ -114,6 +117,7 @@ PHTML;
 		$template = $this->createMock(Template::class);
 		$urlGenerator = $this->createMock(UrlGenerator::class);
 		$session = $this->createMock(Session::class);
+		$translation = $this->createMock(Translation::class);
 
 		$path->expects($this->any())
 			->method('getTemplatesPath')
@@ -126,7 +130,7 @@ PHTML;
 				$this->equalTo(['someKey' => 'Something'])
 			);
 
-		$block = new Block($path, $template, $urlGenerator, $session);
+		$block = new Block($path, $template, $urlGenerator, $session, $translation);
 
 		$block->setTemplate('blocks/include-param');
 		$block->render();
@@ -137,6 +141,7 @@ PHTML;
 		$template = $this->createMock(Template::class);
 		$urlGenerator = $this->createMock(UrlGenerator::class);
 		$session = $this->createMock(Session::class);
+		$translation = $this->createMock(Translation::class);
 
 		$path->expects($this->any())
 			->method('getTemplatesPath')
@@ -149,7 +154,7 @@ PHTML;
 				$this->equalTo(['body' => 'Extend block'])
 			);
 
-		$block = new Block($path, $template, $urlGenerator, $session);
+		$block = new Block($path, $template, $urlGenerator, $session, $translation);
 
 		$block->setTemplate('blocks/extend');
 		$block->render();
@@ -160,6 +165,7 @@ PHTML;
 		$template = $this->createMock(Template::class);
 		$urlGenerator = $this->createMock(UrlGenerator::class);
 		$session = $this->createMock(Session::class);
+		$translation = $this->createMock(Translation::class);
 
 		$path->expects($this->any())
 			->method('getTemplatesPath')
@@ -172,7 +178,7 @@ PHTML;
 				$this->equalTo(['body' => 'Extend block', 'someKey' => 'Something'])
 			);
 
-		$block = new Block($path, $template, $urlGenerator, $session);
+		$block = new Block($path, $template, $urlGenerator, $session, $translation);
 
 		$block->setTemplate('blocks/extend-param');
 		$block->render();
@@ -183,6 +189,7 @@ PHTML;
 		$template = $this->createMock(Template::class);
 		$urlGenerator = $this->createMock(UrlGenerator::class);
 		$session = $this->createMock(Session::class);
+		$translation = $this->createMock(Translation::class);
 
 		$path->expects($this->any())
 			->method('getTemplatesPath')
@@ -195,7 +202,7 @@ PHTML;
 				$this->equalTo(['body' => 'Extend block'])
 			);
 
-		$block = new Block($path, $template, $urlGenerator, $session);
+		$block = new Block($path, $template, $urlGenerator, $session, $translation);
 
 		$block->setTemplate('blocks/extend-non-array-param');
 		$block->render();
@@ -206,6 +213,7 @@ PHTML;
 		$template = $this->createMock(Template::class);
 		$urlGenerator = $this->createMock(UrlGenerator::class);
 		$session = $this->createMock(Session::class);
+		$translation = $this->createMock(Translation::class);
 
 		$path->expects($this->any())
 			->method('getTemplatesPath')
@@ -218,7 +226,7 @@ PHTML;
 				$this->equalTo(['content' => 'Extend block'])
 			);
 
-		$block = new Block($path, $template, $urlGenerator, $session);
+		$block = new Block($path, $template, $urlGenerator, $session, $translation);
 
 		$block->setTemplate('blocks/extend-param-name');
 		$block->render();
@@ -229,6 +237,7 @@ PHTML;
 		$template = $this->createMock(Template::class);
 		$urlGenerator = $this->createMock(UrlGenerator::class);
 		$session = $this->createMock(Session::class);
+		$translation = $this->createMock(Translation::class);
 
 		$path->expects($this->any())
 			->method('getTemplatesPath')
@@ -241,7 +250,7 @@ PHTML;
 				$this->equalTo(['body' => 'Extend block'])
 			);
 
-		$block = new Block($path, $template, $urlGenerator, $session);
+		$block = new Block($path, $template, $urlGenerator, $session, $translation);
 
 		$block->setTemplate('blocks/extend-empty-string-param-name');
 		$block->render();
@@ -252,6 +261,7 @@ PHTML;
 		$template = $this->createMock(Template::class);
 		$urlGenerator = $this->createMock(UrlGenerator::class);
 		$session = $this->createMock(Session::class);
+		$translation = $this->createMock(Translation::class);
 
 		$path->expects($this->any())
 			->method('getTemplatesPath')
@@ -264,7 +274,7 @@ PHTML;
 				$this->equalTo(['body' => 'Extend block'])
 			);
 
-		$block = new Block($path, $template, $urlGenerator, $session);
+		$block = new Block($path, $template, $urlGenerator, $session, $translation);
 
 		$block->setTemplate('blocks/extend-non-string-param-name');
 		$block->render();
@@ -275,6 +285,7 @@ PHTML;
 		$template = $this->createMock(Template::class);
 		$urlGenerator = $this->createMock(UrlGenerator::class);
 		$session = $this->createMock(Session::class);
+		$translation = $this->createMock(Translation::class);
 
 		$urlGenerator->expects($this->once())
 			->method('generate')
@@ -283,7 +294,7 @@ PHTML;
 				$this->equalTo(['id' => 1])
 			);
 
-		$block = new Block($path, $template, $urlGenerator, $session);
+		$block = new Block($path, $template, $urlGenerator, $session, $translation);
 
 		$block->url('product.show', ['id' => 1]);
 	}
@@ -293,12 +304,13 @@ PHTML;
 		$template = $this->createMock(Template::class);
 		$urlGenerator = $this->createMock(UrlGenerator::class);
 		$session = $this->createMock(Session::class);
+		$translation = $this->createMock(Translation::class);
 
 		$session->expects($this->once())
 			->method('generateCsrfHtml')
 			->willReturn('<some csrf input tag>');
 
-		$block = new Block($path, $template, $urlGenerator, $session);
+		$block = new Block($path, $template, $urlGenerator, $session, $translation);
 
 		$this->assertSame('<some csrf input tag>', $block->csrf());
 	}
@@ -308,13 +320,30 @@ PHTML;
 		$template = $this->createMock(Template::class);
 		$urlGenerator = $this->createMock(UrlGenerator::class);
 		$session = $this->createMock(Session::class);
+		$translation = $this->createMock(Translation::class);
 
 		$session->expects($this->once())
 			->method('generateCsrfMeta')
 			->willReturn('<some csrf meta tags>');
 
-		$block = new Block($path, $template, $urlGenerator, $session);
+		$block = new Block($path, $template, $urlGenerator, $session, $translation);
 
 		$this->assertSame('<some csrf meta tags>', $block->csrfMeta());
+	}
+
+	public function testTranslateHelper() {
+		$path = $this->createMock(Path::class);
+		$template = $this->createMock(Template::class);
+		$urlGenerator = $this->createMock(UrlGenerator::class);
+		$session = $this->createMock(Session::class);
+		$translation = $this->createMock(Translation::class);
+
+		$translation->expects($this->once())
+			->method('translate')
+			->willReturn('Some translated text');
+
+		$block = new Block($path, $template, $urlGenerator, $session, $translation);
+
+		$this->assertSame('Some translated text', $block->translate('some.key'));
 	}
 }

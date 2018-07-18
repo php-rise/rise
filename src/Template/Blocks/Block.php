@@ -6,6 +6,7 @@ use Rise\Path;
 use Rise\Template;
 use Rise\Router\UrlGenerator;
 use Rise\Session;
+use Rise\Translation;
 
 class Block {
 	/**
@@ -70,16 +71,23 @@ class Block {
 	 */
 	protected $session;
 
+	/**
+	 * @var \Rise\Translation
+	 */
+	protected $translation;
+
 	public function __construct(
 		Path $pathService,
 		Template $templateService,
 		UrlGenerator $urlGenerator,
-		Session $session
+		Session $session,
+		Translation $translation
 	) {
 		$this->pathService = $pathService;
 		$this->templateService = $templateService;
 		$this->urlGenerator = $urlGenerator;
 		$this->session = $session;
+		$this->translation = $translation;
 	}
 
 	/**
@@ -155,6 +163,18 @@ class Block {
 	 */
 	public function csrfValue() {
 		return $this->session->getCsrfToken();
+	}
+
+	/**
+	 * Helper function for translation.
+	 *
+	 * @param string $key
+	 * @param string $defaultValue
+	 * @param string $locale
+	 * @return string
+	 */
+	public function translate($key, $defaultValue = '', $locale = null) {
+		return $this->translation->translate($key, $defaultValue, $locale);
 	}
 
 	/**
