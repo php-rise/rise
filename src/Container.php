@@ -240,10 +240,10 @@ class Container {
 		}
 
 		$args = $this->resolveArgs($class, '__construct', " when constructing $class");
-		if (empty($args)) {
-			$instance = new $class;
-		} else {
+		if ($args) {
 			$instance = new $class(...$args);
+		} else {
+			$instance = new $class;
 		}
 
 		return $instance;

@@ -46,7 +46,7 @@ class Session {
 		) {
 			$token = $request->getInput($this->sessionService->getCsrfTokenFormKey())
 				?: $request->getHeader($this->sessionService->getCsrfTokenHeaderKey());
-			if (empty($token) || !$this->sessionService->validateCsrfToken($token)) {
+			if (is_null($token) || !$this->sessionService->validateCsrfToken($token)) {
 				$response = $this->response;
 				$response->setStatusCode(403);
 				$response->setHeader('Content-Type', 'text/plain');

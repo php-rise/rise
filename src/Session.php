@@ -211,7 +211,7 @@ class Session {
 	 * @param string $token
 	 * @return bool
 	 */
-	public function validateCsrfToken($token = '') {
+	public function validateCsrfToken($token) {
 		return (
 			isset($_SESSION[$this->csrfTokenSessionKey])
 			&& $_SESSION[$this->csrfTokenSessionKey] === $token

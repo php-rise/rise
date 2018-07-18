@@ -120,7 +120,7 @@ class Request {
 	 * @return mixed
 	 */
 	public function getHeader($key, $defaultValue = null) {
-		if (empty($key)) {
+		if (!is_string($key) || $key === '') {
 			return $defaultValue;
 		}
 

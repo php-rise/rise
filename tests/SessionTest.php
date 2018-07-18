@@ -131,7 +131,7 @@ PHP;
 		$session->start();
 
 		$this->assertArrayNotHasKey('__csrf', $_SESSION);
-		$this->assertFalse($session->validateCsrfToken());
+		$this->assertFalse($session->validateCsrfToken('some.token'));
 
 		$token = $session->generateCsrfToken();
 

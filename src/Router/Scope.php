@@ -123,10 +123,10 @@ class Scope {
 	 * @return self
 	 */
 	public function namespace($namespace) {
-		if (empty($namespace)) {
-			$this->namespace = '';
-		} else {
+		if (is_string($namespace) && $namespace) {
 			$this->namespace = rtrim($namespace, '\\') . '\\';
+		} else {
+			$this->namespace = '';
 		}
 		return $this;
 	}
