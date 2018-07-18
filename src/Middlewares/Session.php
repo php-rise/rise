@@ -49,7 +49,7 @@ class Session {
 			if (empty($token) || !$this->sessionService->validateCsrfToken($token)) {
 				$response = $this->response;
 				$response->setStatusCode(403);
-				$response->setContentType('text/plain');
+				$response->setHeader('Content-Type', 'text/plain');
 				$response->setBody('Invalid CSRF token');
 				return;
 			}

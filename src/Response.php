@@ -5,6 +5,17 @@ use Closure;
 use Rise\Router\UrlGenerator;
 
 class Response {
+	/**
+	 * Different modes of response.
+	 *
+	 * MODE_STRING: Message body is a string. This is the default.
+	 * MODE_FILE: Pipe a file.
+	 * MODE_STREAM: Treat response as a stream.
+	 */
+	const MODE_STRING = 'STRING';
+	const MODE_FILE = 'FILE';
+	const MODE_STREAM = 'STREAM';
+
 	// @NOTE HTTP status codes from Symfony\Component\HttpFoundation\Response
 	const HTTP_CONTINUE = 100;
 	const HTTP_SWITCHING_PROTOCOLS = 101;
@@ -68,9 +79,9 @@ class Response {
 	const HTTP_NETWORK_AUTHENTICATION_REQUIRED = 511;                             // RFC6585
 
 	/**
-	 * Status codes translation table.
+	 * Status codes to reason phrases translation table.
 	 *
-	 * @NOTE HTTP status texts from Symfony\Component\HttpFoundation\Response
+	 * @NOTE from Symfony\Component\HttpFoundation\Response
 	 *
 	 * The list of codes is complete according to the
 	 * {@link http://www.iana.org/assignments/http-status-codes/ Hypertext Transfer Protocol (HTTP) Status Code Registry}
@@ -80,7 +91,7 @@ class Response {
 	 *
 	 * @var array
 	 */
-	public static $statusTexts = [
+	public static $reasonPhrasesTable = [
 		100 => 'Continue',
 		101 => 'Switching Protocols',
 		102 => 'Processing',            // RFC2518
@@ -149,14 +160,14 @@ class Response {
 	protected $sent = false;
 
 	/**
-	 * @var \Closure
+	 * @var string
 	 */
-	protected $beforeSend;
+	protected $mode = self::MODE_STRING;
 
 	/**
-	 * @var \Closure
+	 * @var string
 	 */
-	protected $afterSend;
+	protected $httpVersion = '1.1';
 
 	/**
 	 * @var int
@@ -166,12 +177,7 @@ class Response {
 	/**
 	 * @var string
 	 */
-	protected $contentType = 'text/html';
-
-	/**
-	 * @var string
-	 */
-	protected $charset = 'UTF-8';
+	protected $reasonPhrase;
 
 	/**
 	 * @var array
@@ -199,6 +205,105 @@ class Response {
 	) {
 		$this->request = $request;
 		$this->urlGenerator = $urlGenerator;
+
+		if (isset($_SERVER['SERVER_PROTOCOL'])) {
+			$serverProtocol = $_SERVER['SERVER_PROTOCOL'];
+			$this->httpVersion = substr($serverProtocol, strpos($serverProtocol, '/') + 1);
+		}
+	}
+
+	/**
+	 * Send response.
+	 *
+	 * @param mixed $content
+	 * @return self
+	 */
+	public function send($content = null) {
+		if ($this->sent) {
+			return $this;
+		}
+
+		if ($this->request->isMethod('HEAD')) {
+			$this->setMode(self::MODE_STRING);
+			$this->unsetHeader('Content-Length');
+			$this->setBody('');
+		}
+
+		switch ($this->mode) {
+		case self::MODE_STRING:
+			if (!is_null($content)) {
+				$this->setBody($content);
+			}
+			break;
+
+		case self::MODE_FILE:
+			if (is_file($content)) {
+				if (!$this->hasHeader('Content-Type')) {
+					$this->setHeader('Content-Type', 'application/octet-stream ');
+				}
+				$this->setHeader('Content-Length', filesize($content));
+				$this->setBody($content);
+			} else {
+				$this->setMode(self::MODE_STRING);
+				$this->setStatusCode(404);
+				$this->unsetHeader('Content-Length');
+				$this->setBody('');
+			}
+			break;
+
+		case self::MODE_STREAM:
+			$this->setBody($content);
+			break;
+		}
+
+		$this->sendHeaders();
+
+		$this->sendBody();
+
+		switch ($this->mode) {
+		case self::MODE_STRING:
+		case self::MODE_FILE:
+			$this->end();
+			break;
+		}
+
+		return $this;
+	}
+
+	/**
+	 * @return self
+	 */
+	public function end() {
+		if ($this->sent) {
+			return $this;
+		}
+
+		if (function_exists('fastcgi_finish_request')) {
+			fastcgi_finish_request();
+		} elseif ('cli' !== PHP_SAPI) {
+			static::closeOutputBuffers(0, true);
+		}
+
+		$this->sent = true;
+
+		return $this;
+	}
+
+	/**
+	 * Send a file.
+	 *
+	 * @param string $file
+	 * @return self
+	 */
+	public function sendFile($file) {
+		if ($this->sent) {
+			return $this;
+		}
+
+		$this->setMode(self::MODE_FILE);
+		$this->send($file);
+
+		return $this;
 	}
 
 	/**
@@ -234,63 +339,41 @@ Redirecting to <a href="%1$s">%1$s</a>', htmlspecialchars($url, ENT_QUOTES, 'UTF
 	}
 
 	/**
-	 * @param callable $beforeSend
-	 * @return self
+	 * @return bool
 	 */
-	public function onBeforeSend(Closure $beforeSend) {
-		$this->beforeSend = $beforeSend;
-		return $this;
+	public function isSent() {
+		return $this->sent;
 	}
 
 	/**
-	 * @param callable $afterSend
+	 * Set response to sent.
+	 *
 	 * @return self
 	 */
-	public function onAfterSend(Closure $afterSend) {
-		$this->afterSend = $afterSend;
-		return $this;
-	}
-
-	/**
-	 * @return self
-	 */
-	public function send() {
-		if ($this->sent) {
-			return $this;
-		}
-
-		if ($this->beforeSend instanceof Closure) {
-			($this->beforeSend)();
-		}
-
-		if ($this->request && $this->request->isMethod('HEAD')) {
-			$this->unsetHeader('Content-Length');
-			$this->setBody('');
-		}
-
-		if (!$this->hasHeader('Content-Type')) {
-			$this->setHeader('Content-Type', $this->contentType.'; charset='.$this->charset);
-		}
-
-		$this->sendHeaders();
-		$this->sendBody();
-
-		// echo memory_get_usage();
-		// echo ' ';
-		// echo memory_get_peak_usage(true);
-
-		if (function_exists('fastcgi_finish_request')) {
-			fastcgi_finish_request();
-		} elseif ('cli' !== PHP_SAPI) {
-			static::closeOutputBuffers(0, true);
-		}
-
-		if ($this->afterSend instanceof Closure) {
-			($this->afterSend)();
-		}
-
+	public function wasSent() {
 		$this->sent = true;
+		return $this;
+	}
 
+	/**
+	 * Set response mode.
+	 *
+	 * @param string $mode
+	 * @return self
+	 */
+	public function setMode($mode) {
+		$this->mode = $mode;
+		return $this;
+	}
+
+	/**
+	 * Set HTTP version.
+	 *
+	 * @param string $version
+	 * @return self
+	 */
+	public function setHttpVersion($version) {
+		$this->httpVersion = $version;
 		return $this;
 	}
 
@@ -306,10 +389,21 @@ Redirecting to <a href="%1$s">%1$s</a>', htmlspecialchars($url, ENT_QUOTES, 'UTF
 	}
 
 	/**
+	 * Set reason phrase in the status line of HTTP message.
+	 *
+	 * @param string $reasonPhrase
+	 * @return self
+	 */
+	public function setReasonPhrase($reasonPhrase) {
+		$this->reasonPhrase = $reasonPhrase;
+		return $this;
+	}
+
+	/**
 	 * @param string $name
 	 * @return bool
 	 */
-	public function hasHeader($name = '') {
+	public function hasHeader($name) {
 		return array_key_exists($name, $this->headers);
 	}
 
@@ -318,6 +412,14 @@ Redirecting to <a href="%1$s">%1$s</a>', htmlspecialchars($url, ENT_QUOTES, 'UTF
 	 */
 	public function getHeaders() {
 		return $this->headers;
+	}
+
+	/**
+	 * @param string $name
+	 * @return mixed
+	 */
+	public function getHeader($name) {
+		return array_key_exists($name, $this->headers) ? $this->headers[$name] : null;
 	}
 
 	/**
@@ -363,26 +465,30 @@ Redirecting to <a href="%1$s">%1$s</a>', htmlspecialchars($url, ENT_QUOTES, 'UTF
 	 * @param string $body
 	 * @return self
 	 */
-	public function setBody($body = '') {
+	public function setBody($body) {
 		$this->body = $body;
 		return $this;
 	}
 
 	/**
-	 * @param string $contentType
+	 * Set content type for html.
+	 *
+	 * @param string $charset
 	 * @return self
 	 */
-	public function setContentType($contentType) {
-		$this->contentType = $contentType;
+	public function asHtml($charset = 'UTF-8') {
+		$this->setHeader('Content-Type', 'text/html; charset=' . $charset);
 		return $this;
 	}
 
 	/**
+	 * Set content type for json.
+	 *
 	 * @param string $charset
 	 * @return self
 	 */
-	public function setCharset($charset) {
-		$this->charset = $charset;
+	public function asJson($charset = 'UTF-8') {
+		$this->setHeader('Content-Type', 'application/json; charset=' . $charset);
 		return $this;
 	}
 
@@ -410,25 +516,41 @@ Redirecting to <a href="%1$s">%1$s</a>', htmlspecialchars($url, ENT_QUOTES, 'UTF
 	}
 
 	/**
-	 * @return string
-	 */
-	protected function getStatusLine() {
-		$serverProtocol = isset($_SERVER['SERVER_PROTOCOL']) ? $_SERVER['SERVER_PROTOCOL'] : null;
-		if ($serverProtocol == 'HTTP/1.1' || $serverProtocol == 'HTTP/1.0') {
-		} else {
-			$serverProtocol = 'HTTP/1.1';
-		}
-		$statusText = isset($this->statusTexts[$this->statusCode]) ? $this->statusTexts[$this->statusCode] : '';
-		$statusLine = $serverProtocol.' '.$this->statusCode.' '.$statusText;
-		return $statusLine;
-	}
-
-	/**
 	 * @return self
 	 */
 	protected function sendBody() {
-		echo $this->body;
+		switch ($this->mode) {
+		case self::MODE_STRING:
+			echo $this->body;
+			break;
+
+		case self::MODE_FILE:
+			if (!empty($this->body)) {
+				readfile($this->body);
+			}
+			break;
+
+		case self::MODE_STREAM:
+			echo $this->body;
+			$this->body = '';
+			break;
+		}
 		return $this;
+	}
+
+	/**
+	 * @return string
+	 */
+	protected function getStatusLine() {
+		$statusLine = 'HTTP/' . $this->httpVersion . ' ' . $this->statusCode;
+
+		if (!empty($this->reasonPhrase)) {
+			$statusLine .= ' ' . $this->reasonPhrase;
+		} else if (isset(static::$reasonPhrasesTable[$this->statusCode])) {
+			$statusLine .= ' ' . static::$reasonPhrasesTable[$this->statusCode];
+		}
+
+		return $statusLine;
 	}
 
 	/**

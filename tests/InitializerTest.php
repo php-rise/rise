@@ -59,7 +59,12 @@ final class InitializerTest extends TestCase {
 			->will($this->returnSelf());
 
 		$response->expects($this->once())
-			->method('send');
+			->method('send')
+			->will($this->returnSelf());
+
+		$response->expects($this->once())
+			->method('end')
+			->will($this->returnSelf());
 
 		$container->expects($this->exactly(3))
 			->method('get')

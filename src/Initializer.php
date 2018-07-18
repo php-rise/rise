@@ -37,7 +37,7 @@ class Initializer {
 		$router->buildRoutes()->match();
 		$response->setStatusCode($router->getMatchedStatus());
 		$dispatcher->setHandlers($router->getMatchedHandler())->dispatch();
-		$response->send();
+		$response->send()->end();
 
 		return $this;
 	}

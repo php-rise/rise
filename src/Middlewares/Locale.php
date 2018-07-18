@@ -95,7 +95,7 @@ class Locale {
 	protected function notFound() {
 		$response = $this->response;
 		$response->setStatusCode(404);
-		$response->setContentType('text/plain');
+		$response->setHeader('Content-Type', 'text/plain');
 		$response->setBody('Invalid locale');
 	}
 }
