@@ -219,14 +219,20 @@ class Block {
 	 * @return string
 	 */
 	protected function renderToHtml() {
-		try {
-			extract($this->data, EXTR_SKIP);
-			ob_start();
-			include $this->pathService->getTemplatesPath() . '/' . $this->template . '.phtml';
-			$html = ob_get_clean();
-		} catch (Exception $e) {
-			$html = '';
-		}
+		extract($this->data, EXTR_SKIP);
+		ob_start();
+		set_error_handler([$this, 'handleError']);
+		include $this->pathService->getTemplatesPath() . '/' . $this->template . '.phtml';
+		restore_error_handler();
+		$html = ob_get_clean();
 		return $html;
+	}
+
+	/**
+	 * Error handler.
+	 */
+	public function handleError($errno, $errstr, $errfile, $errline) {
+		ob_end_clean();
+		throw new BlockException($errstr, 0, $errno, $errfile, $errline);
 	}
 }

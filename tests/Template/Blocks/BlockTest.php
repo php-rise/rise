@@ -4,6 +4,7 @@ namespace Rise\Test;
 use PHPUnit\Framework\TestCase;
 use org\bovigo\vfs\vfsStream;
 use Rise\Template\Blocks\Block;
+use Rise\Template\Blocks\BlockException;
 use Rise\Template;
 use Rise\Path;
 use Rise\Router\UrlGenerator;
@@ -277,6 +278,24 @@ PHTML;
 		$block = new Block($path, $template, $urlGenerator, $session, $translation);
 
 		$block->setTemplate('blocks/extend-non-string-param-name');
+		$block->render();
+	}
+
+	public function testNotExistBlock() {
+		$this->expectException(BlockException::class);
+
+		$path = $this->createMock(Path::class);
+		$template = $this->createMock(Template::class);
+		$urlGenerator = $this->createMock(UrlGenerator::class);
+		$session = $this->createMock(Session::class);
+		$translation = $this->createMock(Translation::class);
+
+		$path->expects($this->any())
+			->method('getTemplatesPath')
+			->willReturn(vfsStream::url('root/templates'));
+
+		$block = new Block($path, $template, $urlGenerator, $session, $translation);
+		$block->setTemplate('not/exist/template');
 		$block->render();
 	}
 
