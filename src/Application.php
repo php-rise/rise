@@ -1,7 +1,7 @@
 <?php
 namespace Rise;
 
-class Initializer {
+class Application {
 	/**
 	 * @var \Rise\Container
 	 */

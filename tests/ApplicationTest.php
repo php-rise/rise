@@ -2,14 +2,14 @@
 namespace Rise\Test;
 
 use PHPUnit\Framework\TestCase;
-use Rise\Initializer;
+use Rise\Application;
 use Rise\Path;
 use Rise\Container;
 use Rise\Router;
 use Rise\Dispatcher;
 use Rise\Response;
 
-final class InitializerTest extends TestCase {
+final class ApplicationTest extends TestCase {
 	public function setProjectRoot() {
 		$path = $this->createMock(Path::class);
 		$container = $this->createMock(Container::class);
@@ -17,8 +17,8 @@ final class InitializerTest extends TestCase {
 		$path->expects($this->once())
 			->method('setProjectRootPath');
 
-		$initializer = new Initializer($container, $path);
-		$initializer->setProjectRoot('some/path');
+		$application = new Application($container, $path);
+		$application->setProjectRoot('some/path');
 	}
 
 	public function testRun() {
@@ -81,7 +81,7 @@ final class InitializerTest extends TestCase {
 				}
 			}));
 
-		$initializer = new Initializer($container, $path);
-		$initializer->run();
+		$application = new Application($container, $path);
+		$application->run();
 	}
 }
