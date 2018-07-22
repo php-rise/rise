@@ -231,7 +231,7 @@ class Block {
 	/**
 	 * Error handler.
 	 */
-	public function handleError($errno, $errstr, $errfile, $errline) {
+	protected function handleError($errno, $errstr, $errfile, $errline) {
 		ob_end_clean();
 		throw new BlockException($errstr, 0, $errno, $errfile, $errline);
 	}
