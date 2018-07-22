@@ -11,18 +11,12 @@ final class RequestTest extends TestCase {
 		$_SERVER['REQUEST_URI'] = '/products/15?buy=1';
 		$_SERVER['REQUEST_METHOD'] = 'GET';
 		$_SERVER['HTTP_X_REQUESTED_WITH'] = 'XMLHttpRequest';
-
-		$_GET['page'] = '8';
-		$_POST['password'] = 'secret';
 	}
 
 	public function tearDown() {
 		unset($_SERVER['REQUEST_URI']);
 		unset($_SERVER['REQUEST_METHOD']);
 		unset($_SERVER['HTTP_X_REQUESTED_WITH']);
-
-		unset($_GET['page']);
-		unset($_POST['password']);
 	}
 
 	public function testPath() {
@@ -58,7 +52,35 @@ final class RequestTest extends TestCase {
 		$this->assertNull($request->getHeader('X-Some-Thing'));
 	}
 
-	public function testParam() {
+	public function testGetParams() {
+		$upload = $this->createMock(Upload::class);
+		$result = $this->createMock(Result::class);
+		$_GET = [
+			'param' => '1'
+		];
+
+		$request = new Request($upload, $result);
+
+		$this->assertSame(['param' => '1'], $request->getGetParams());
+
+		unset($_GET);
+	}
+
+	public function testPostParams() {
+		$upload = $this->createMock(Upload::class);
+		$result = $this->createMock(Result::class);
+		$_POST = [
+			'param' => '1'
+		];
+
+		$request = new Request($upload, $result);
+
+		$this->assertSame(['param' => '1'], $request->getPostParams());
+
+		unset($_POST);
+	}
+
+	public function testUrlParam() {
 		$upload = $this->createMock(Upload::class);
 		$result = $this->createMock(Result::class);
 
@@ -79,31 +101,9 @@ final class RequestTest extends TestCase {
 
 		$request = new Request($upload, $result);
 
-		$this->assertSame($params, $request->getParams());
-		$this->assertSame('1', $request->getParam('id'));
-		$this->assertNull($request->getParam('NotExists'));
-	}
-
-	public function testQuery() {
-		$upload = $this->createMock(Upload::class);
-		$result = $this->createMock(Result::class);
-
-		$request = new Request($upload, $result);
-
-		$this->assertSame('8', $request->getQuery('page'));
-		$this->assertNull($request->getQuery('NotExists'));
-		$this->assertSame('SomeValue', $request->getQuery('NotExists', 'SomeValue'));
-	}
-
-	public function testInput() {
-		$upload = $this->createMock(Upload::class);
-		$result = $this->createMock(Result::class);
-
-		$request = new Request($upload, $result);
-
-		$this->assertSame('secret', $request->getInput('password'));
-		$this->assertNull($request->getInput('NotExists'));
-		$this->assertSame('SomeValue', $request->getInput('NotExists', 'SomeValue'));
+		$this->assertSame($params, $request->getUrlParams());
+		$this->assertSame('1', $request->getUrlParam('id'));
+		$this->assertNull($request->getUrlParam('NotExists'));
 	}
 
 	public function testFiles() {

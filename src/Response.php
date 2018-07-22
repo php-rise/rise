@@ -206,10 +206,7 @@ class Response {
 		$this->request = $request;
 		$this->urlGenerator = $urlGenerator;
 
-		if (isset($_SERVER['SERVER_PROTOCOL'])) {
-			$serverProtocol = $_SERVER['SERVER_PROTOCOL'];
-			$this->httpVersion = substr($serverProtocol, strpos($serverProtocol, '/') + 1);
-		}
+		$this->httpVersion = $this->request->getHttpVersion() ?: $this->httpVersion;
 	}
 
 	/**
@@ -231,7 +228,7 @@ class Response {
 
 		switch ($this->mode) {
 		case self::MODE_STRING:
-			if (!is_null($content)) {
+			if ($content !== null) {
 				$this->setBody($content);
 			}
 			break;
@@ -404,7 +401,7 @@ Redirecting to <a href="%1$s">%1$s</a>', htmlspecialchars($url, ENT_QUOTES, 'UTF
 	 * @return bool
 	 */
 	public function hasHeader($name) {
-		return array_key_exists($name, $this->headers);
+		return !empty($this->headers[$name]);
 	}
 
 	/**
@@ -419,7 +416,7 @@ Redirecting to <a href="%1$s">%1$s</a>', htmlspecialchars($url, ENT_QUOTES, 'UTF
 	 * @return mixed
 	 */
 	public function getHeader($name) {
-		return array_key_exists($name, $this->headers) ? $this->headers[$name] : null;
+		return !empty($this->headers[$name]) ? $this->headers[$name] : null;
 	}
 
 	/**

@@ -13,7 +13,6 @@ final class SessionTest extends TestCase {
 		$request = $this->createMock(Request::class);
 		$response = $this->createMock(Response::class);
 		$executedNext = false;
-
 		$next = function () use (&$executedNext) {
 			$executedNext = true;
 		};
@@ -31,132 +30,259 @@ final class SessionTest extends TestCase {
 		$this->assertTrue($executedNext);
 	}
 
-	public function testValidateCsrfForUnmatchedHttpMethod() {
-		$sessionService = $this->createMock(SessionService::class);
-		$request = $this->createMock(Request::class);
-		$response = $this->createMock(Response::class);
+	public function testValidateCsrfIgnoreHttpGetRequest() {
+		$middleware = $this->getSessionMiddlewareForValidateCsrfIgnoreHttpMethod('GET');
 		$executedNext = false;
-
 		$next = function () use (&$executedNext) {
 			$executedNext = true;
 		};
-
-		$request->expects($this->atLeastOnce())
-			->method('isMethod')
-			->willReturn(false);
-
-		$sessionService->expects($this->never())
-			->method('validateCsrfToken');
-
-		$middleware = new SessionMiddleware($sessionService, $request, $response);
-
 		$middleware->validateCsrf($next);
 
 		$this->assertTrue($executedNext);
 	}
 
-	public function testValidateCsrfForMatchedHttpMethodAndMatchedCsrfTokenInPostParameter() {
-		$sessionService = $this->createMock(SessionService::class);
-		$request = $this->createMock(Request::class);
-		$response = $this->createMock(Response::class);
+	public function testValidateCsrfIgnoreHttpHeadRequest() {
+		$middleware = $this->getSessionMiddlewareForValidateCsrfIgnoreHttpMethod('HEAD');
 		$executedNext = false;
-
 		$next = function () use (&$executedNext) {
 			$executedNext = true;
 		};
+		$middleware->validateCsrf($next);
+
+		$this->assertTrue($executedNext);
+	}
+
+	public function testValidateCsrfIgnoreHttpOptionsRequest() {
+		$middleware = $this->getSessionMiddlewareForValidateCsrfIgnoreHttpMethod('OPTIONS');
+		$executedNext = false;
+		$next = function () use (&$executedNext) {
+			$executedNext = true;
+		};
+		$middleware->validateCsrf($next);
+
+		$this->assertTrue($executedNext);
+	}
+
+	public function testValidateCsrfIgnoreHttpTraceRequest() {
+		$middleware = $this->getSessionMiddlewareForValidateCsrfIgnoreHttpMethod('TRACE');
+		$executedNext = false;
+		$next = function () use (&$executedNext) {
+			$executedNext = true;
+		};
+		$middleware->validateCsrf($next);
+
+		$this->assertTrue($executedNext);
+	}
+
+	public function testValdiateCsrfIgnoreHttpConnectRequest() {
+		$middleware = $this->getSessionMiddlewareForValidateCsrfIgnoreHttpMethod('CONNECT');
+		$executedNext = false;
+		$next = function () use (&$executedNext) {
+			$executedNext = true;
+		};
+		$middleware->validateCsrf($next);
+
+		$this->assertTrue($executedNext);
+	}
+
+	public function testValidateCsrfCheckHttpPostRequestAndPostParametersWithMatchedCsrfToken() {
+		$sessionService = $this->createMock(SessionService::class);
+		$request = $this->createMock(Request::class);
+		$response = $this->createMock(Response::class);
+		$_POST['csrf_form_key'] = 'secret_csrf_token';
 
 		$sessionService->expects($this->once())
 			->method('getCsrfTokenFormKey')
-			->willReturn('some_form_key');
+			->willReturn('csrf_form_key');
 
 		$sessionService->expects($this->once())
 			->method('validateCsrfToken')
 			->willReturn(true);
 
 		$request->expects($this->atLeastOnce())
-			->method('isMethod')
-			->willReturn(true);
-
-		$request->expects($this->once())
-			->method('getInput')
-			->with($this->equalTo('some_form_key'))
-			->willReturn('some_token');
-
-		$request->expects($this->any())
-			->method('getHeader')
-			->willReturn(null);
+			->method('getMethod')
+			->willReturn('POST');
 
 		$middleware = new SessionMiddleware($sessionService, $request, $response);
-
+		$executedNext = false;
+		$next = function () use (&$executedNext) {
+			$executedNext = true;
+		};
 		$middleware->validateCsrf($next);
 
 		$this->assertTrue($executedNext);
+
+		unset($_POST['csrf_form_key']);
+	}
+
+	public function testValidateCsrfCheckHttpPostRequestAndPostParametersWithWrongCsrfToken() {
+		$sessionService = $this->createMock(SessionService::class);
+		$request = $this->createMock(Request::class);
+		$response = $this->createMock(Response::class);
+		$_POST['csrf_form_key'] = 'wrong_csrf_token';
+
+		$sessionService->expects($this->once())
+			->method('getCsrfTokenFormKey')
+			->willReturn('csrf_form_key');
+
+		$sessionService->expects($this->once())
+			->method('validateCsrfToken')
+			->willReturn(false);
+
+		$request->expects($this->atLeastOnce())
+			->method('getMethod')
+			->willReturn('POST');
+
+		$middleware = new SessionMiddleware($sessionService, $request, $response);
+		$executedNext = false;
+		$next = function () use (&$executedNext) {
+			$executedNext = true;
+		};
+		$middleware->validateCsrf($next);
+
+		$this->assertFalse($executedNext);
+
+		unset($_POST['csrf_form_key']);
+	}
+
+	public function testValidateCsrfCheckHttpPutRequestAndPutParametersWithMatchedCsrfToken() {
+		$sessionService = $this->createMock(SessionService::class);
+		$request = $this->createMock(Request::class);
+		$response = $this->createMock(Response::class);
+
+		$sessionService->expects($this->once())
+			->method('getCsrfTokenFormKey')
+			->willReturn('csrf_form_key');
+
+		$sessionService->expects($this->once())
+			->method('validateCsrfToken')
+			->willReturn(true);
+
+		$request->expects($this->atLeastOnce())
+			->method('getMethod')
+			->willReturn('PUT');
+
+		$request->expects($this->atLeastOnce())
+			->method('getPutParams')
+			->willReturn(['csrf_form_key' => 'secret_csrf_token']);
+
+		$middleware = new SessionMiddleware($sessionService, $request, $response);
+		$executedNext = false;
+		$next = function () use (&$executedNext) {
+			$executedNext = true;
+		};
+		$middleware->validateCsrf($next);
+
+		$this->assertTrue($executedNext);
+	}
+
+	public function testValidateCsrfCheckHttpPutRequestAndPutParametersWithWrongCsrfToken() {
+		$sessionService = $this->createMock(SessionService::class);
+		$request = $this->createMock(Request::class);
+		$response = $this->createMock(Response::class);
+
+		$sessionService->expects($this->once())
+			->method('getCsrfTokenFormKey')
+			->willReturn('csrf_form_key');
+
+		$sessionService->expects($this->once())
+			->method('validateCsrfToken')
+			->willReturn(false);
+
+		$request->expects($this->atLeastOnce())
+			->method('getMethod')
+			->willReturn('PUT');
+
+		$request->expects($this->atLeastOnce())
+			->method('getPutParams')
+			->willReturn(['csrf_form_key' => 'wrong_csrf_token']);
+
+		$middleware = new SessionMiddleware($sessionService, $request, $response);
+		$executedNext = false;
+		$next = function () use (&$executedNext) {
+			$executedNext = true;
+		};
+		$middleware->validateCsrf($next);
+
+		$this->assertFalse($executedNext);
 	}
 
 	public function testValidateCsrfForMatchedHttpMethodAndMatchedCsrfTokenInHeader() {
 		$sessionService = $this->createMock(SessionService::class);
 		$request = $this->createMock(Request::class);
 		$response = $this->createMock(Response::class);
-		$executedNext = false;
-
-		$next = function () use (&$executedNext) {
-			$executedNext = true;
-		};
 
 		$sessionService->expects($this->once())
 			->method('getCsrfTokenHeaderKey')
-			->willReturn('some_header_key');
+			->willReturn('csrf_header_key');
 
 		$sessionService->expects($this->once())
 			->method('validateCsrfToken')
 			->willReturn(true);
 
 		$request->expects($this->atLeastOnce())
-			->method('isMethod')
-			->willReturn(true);
-
-		$request->expects($this->any())
-			->method('getInput')
-			->willReturn(null);
+			->method('getMethod')
+			->willReturn('POST');
 
 		$request->expects($this->once())
 			->method('getHeader')
-			->with($this->equalTo('some_header_key'))
-			->willReturn('some_token');
+			->with($this->equalTo('csrf_header_key'))
+			->willReturn('secret_csrf_token');
 
 		$middleware = new SessionMiddleware($sessionService, $request, $response);
-
+		$executedNext = false;
+		$next = function () use (&$executedNext) {
+			$executedNext = true;
+		};
 		$middleware->validateCsrf($next);
 
 		$this->assertTrue($executedNext);
 	}
 
-	public function testValidateCsrfForMatchedHttpMethodAndUnmatchedCsrfToken() {
+	public function testValidateCsrfUnmatchedCsrfTokenInHeader() {
 		$sessionService = $this->createMock(SessionService::class);
 		$request = $this->createMock(Request::class);
 		$response = $this->createMock(Response::class);
-		$executedNext = false;
 
-		$next = function () use (&$executedNext) {
-			$executedNext = true;
-		};
+		$sessionService->expects($this->once())
+			->method('getCsrfTokenHeaderKey')
+			->willReturn('csrf_header_key');
 
 		$sessionService->expects($this->once())
 			->method('validateCsrfToken')
 			->willReturn(false);
 
 		$request->expects($this->atLeastOnce())
-			->method('isMethod')
-			->willReturn(true);
+			->method('getMethod')
+			->willReturn('POST');
 
 		$request->expects($this->once())
-			->method('getInput')
-			->willReturn('some_token');
+			->method('getHeader')
+			->with($this->equalTo('csrf_header_key'))
+			->willReturn('secret_csrf_token');
 
 		$middleware = new SessionMiddleware($sessionService, $request, $response);
-
+		$executedNext = false;
+		$next = function () use (&$executedNext) {
+			$executedNext = true;
+		};
 		$middleware->validateCsrf($next);
 
 		$this->assertFalse($executedNext);
+	}
+
+	private function getSessionMiddlewareForValidateCsrfIgnoreHttpMethod($httpMethod) {
+		$sessionService = $this->createMock(SessionService::class);
+		$request = $this->createMock(Request::class);
+		$response = $this->createMock(Response::class);
+
+		$request->expects($this->atLeastOnce())
+			->method('getMethod')
+			->willReturn($httpMethod);
+
+		$sessionService->expects($this->never())
+			->method('validateCsrfToken');
+
+		return new SessionMiddleware($sessionService, $request, $response);
 	}
 }

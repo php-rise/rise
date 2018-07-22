@@ -19,7 +19,7 @@ final class LocaleTest extends TestCase {
 		};
 
 		$request->expects($this->once())
-			->method('getParam')
+			->method('getUrlParam')
 			->with($this->equalTo('locale'))
 			->willReturn('en');
 
@@ -50,7 +50,7 @@ final class LocaleTest extends TestCase {
 		};
 
 		$request->expects($this->once())
-			->method('getParam')
+			->method('getUrlParam')
 			->with($this->equalTo('locale'))
 			->willReturn('en');
 

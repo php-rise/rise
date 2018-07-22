@@ -6,30 +6,46 @@ use Rise\Router\Result as RouterResult;
 
 class Request {
 	/**
-	 * Request path.
+	 * HTTP version.
+	 *
+	 * @var string
 	 */
-	protected $path = '';
+	protected $httpVersion;
 
 	/**
 	 * HTTP method.
 	 *
 	 * @var string
 	 */
-	protected $method = '';
+	protected $method;
+
+	/**
+	 * Request path.
+	 *
+	 * @var string
+	 */
+	protected $path;
 
 	/**
 	 * Host.
 	 *
 	 * @var string|null
 	 */
-	protected $host = null;
+	protected $host;
 
 	/**
-	 * Url parameters. Key value pairs.
+	 * HTTP PUT variables.
 	 *
 	 * @var array
 	 */
-	protected $params = [];
+	protected $putParams;
+
+	/**
+	 * HTTP DELETE variables.
+	 *
+	 * @var array
+	 */
+	protected $deleteParams;
 
 	/**
 	 * @var \Rise\Upload
@@ -44,8 +60,40 @@ class Request {
 	public function __construct(Upload $upload, RouterResult $routerResult) {
 		$this->upload = $upload;
 		$this->routerResult = $routerResult;
-		$this->path = strtok($_SERVER['REQUEST_URI'], '?');
+
 		$this->method = $_SERVER['REQUEST_METHOD'];
+		$this->path = strtok($_SERVER['REQUEST_URI'], '?');
+	}
+
+	/**
+	 * Get request HTTP version.
+	 *
+	 * @return string
+	 */
+	public function getHttpVersion() {
+		if (!isset($this->httpVersion)) {
+			$serverProtocol = $_SERVER['SERVER_PROTOCOL'];
+			$this->httpVersion = substr($serverProtocol, strpos($serverProtocol, '/') + 1);
+		}
+		return $this->httpVersion;
+	}
+
+	/**
+	 * Get HTTP method of the request.
+	 *
+	 * @return string
+	 */
+	public function getMethod() {
+		return $this->method;
+	}
+
+	/**
+	 * Check HTTP method of the request.
+	 *
+	 * @return bool
+	 */
+	public function isMethod($method) {
+		return ($this->method === $method);
 	}
 
 	/**
@@ -65,24 +113,6 @@ class Request {
 	 */
 	public function setPath($path) {
 		$this->path = $path;
-	}
-
-	/**
-	 * Get HTTP method of the request.
-	 *
-	 * @return string
-	 */
-	public function getMethod() {
-		return $this->method;
-	}
-
-	/**
-	 * Check HTTP method of the request.
-	 *
-	 * @return bool
-	 */
-	public function isMethod($method = '') {
-		return ($this->method === $method);
 	}
 
 	/**
@@ -124,13 +154,61 @@ class Request {
 			return $defaultValue;
 		}
 
-		$key = 'HTTP_' . strtoupper(str_replace('-', '_', $key));
+		$key = strtoupper(str_replace('-', '_', $key));
 
-		if (isset($_SERVER[$key])) {
-			return $_SERVER[$key];
+		return $_SERVER['HTTP_' . $key] ?? $_SERVER[$key] ?? $defaultValue;
+	}
+
+	/**
+	 * Return HTTP GET variables.
+	 *
+	 * @return array
+	 */
+	public function getGetParams() {
+		return $_GET ?? [];
+	}
+
+	/**
+	 * Return HTTP POST variables.
+	 *
+	 * @return array
+	 */
+	public function getPostParams() {
+		return $_POST ?? [];
+	}
+
+	/**
+	 * Return HTTP PUT variables.
+	 *
+	 * @return array
+	 */
+	public function getPutParams() {
+		if (!isset($this->putParams)) {
+			if ($this->method === 'PUT') {
+				$this->putParams = $this->getParamsFromInput();
+			} else {
+				$this->putParams = [];
+			}
 		}
 
-		return $defaultValue;
+		return $this->putParams;
+	}
+
+	/**
+	 * Return HTTP DELETE variables.
+	 *
+	 * @return array
+	 */
+	public function getDeleteParams() {
+		if (!isset($this->deleteParams)) {
+			if ($this->method === 'DELETE') {
+				$this->deleteParams = $this->getParamsFromInput();
+			} else {
+				$this->deleteParams = [];
+			}
+		}
+
+		return $this->deleteParams;
 	}
 
 	/**
@@ -138,7 +216,7 @@ class Request {
 	 *
 	 * @return array
 	 */
-	public function getParams() {
+	public function getUrlParams() {
 		return $this->routerResult->getParams();
 	}
 
@@ -149,36 +227,8 @@ class Request {
 	 * @param mixed $defaultValue
 	 * @return mixed
 	 */
-	public function getParam($key, $defaultValue = null) {
+	public function getUrlParam($key, $defaultValue = null) {
 		return $this->routerResult->getParam($key, $defaultValue);
-	}
-
-	/**
-	 * Get a query parameter.
-	 *
-	 * @param string $key
-	 * @param mixed $defaultValue
-	 * @return mixed
-	 */
-	public function getQuery($key, $defaultValue = null) {
-		if (array_key_exists($key, $_GET)) {
-			return $_GET[$key];
-		}
-		return $defaultValue;
-	}
-
-	/**
-	 * Get a POST parameter.
-	 *
-	 * @param string $key
-	 * @param mixed $defaultValue
-	 * @return mixed
-	 */
-	public function getInput($key, $defaultValue = null) {
-		if (array_key_exists($key, $_POST)) {
-			return $_POST[$key];
-		}
-		return $defaultValue;
 	}
 
 	/**
@@ -188,5 +238,18 @@ class Request {
 	 */
 	public function getFiles() {
 		return $this->upload->getFiles();
+	}
+
+	/**
+	 * @return array
+	 */
+	private function getParamsFromInput() {
+		$numOfMatches = preg_match('/boundary=(.*)$/', $this->getHeader('Content-Type'), $matches);
+		if (!$numOfMatches) {
+			parse_str(file_get_contents('php://input'), $params);
+		} else {
+			$params = [];
+		}
+		return $params;
 	}
 }

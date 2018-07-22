@@ -43,7 +43,7 @@ class Locale {
 	 * @param \Closure $next
 	 */
 	public function extractFromPath(Closure $next) {
-		$locale = $this->request->getParam('locale');
+		$locale = $this->request->getUrlParam('locale');
 		if ($this->translation->hasLocale($locale)) {
 			$this->translation->setLocale($locale);
 			$next();

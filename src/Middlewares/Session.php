@@ -39,21 +39,33 @@ class Session {
 	}
 
 	public function validateCsrf(Closure $next) {
-		$request = $this->request;
-		if ($request->isMethod('POST')
-			|| $request->isMethod('PUT')
-			|| $request->isMethod('DELETE')
-		) {
-			$token = $request->getInput($this->sessionService->getCsrfTokenFormKey())
-				?: $request->getHeader($this->sessionService->getCsrfTokenHeaderKey());
-			if (is_null($token) || !$this->sessionService->validateCsrfToken($token)) {
-				$response = $this->response;
-				$response->setStatusCode(403);
-				$response->setHeader('Content-Type', 'text/plain');
-				$response->setBody('Invalid CSRF token');
-				return;
-			}
+		switch ($this->request->getMethod()) {
+		case 'POST':
+			$token = $_POST[$this->sessionService->getCsrfTokenFormKey()] ?? null;
+			break;
+		case 'PUT':
+			$token = $this->request->getPutParams()[$this->sessionService->getCsrfTokenFormKey()] ?? null;
+			break;
+		case 'DELETE':
+			$token = $this->request->getDeleteParams()[$this->sessionService->getCsrfTokenFormKey()] ?? null;
+			break;
+		default:
+			$next();
+			return;
 		}
-		$next();
+
+		// Get token from header if it is not found in body.
+		if (!$token) {
+			$token = $this->request->getHeader($this->sessionService->getCsrfTokenHeaderKey());
+		}
+
+		if (!$token || !$this->sessionService->validateCsrfToken($token)) {
+			$response = $this->response;
+			$response->setStatusCode(403);
+			$response->setHeader('Content-Type', 'text/plain');
+			$response->setBody('Invalid CSRF token');
+		} else {
+			$next();
+		}
 	}
 }
