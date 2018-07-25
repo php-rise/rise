@@ -44,14 +44,21 @@ class UrlGenerator {
 	 * @return string
 	 */
 	public function generate($name, $params = []) {
-		if (isset($_SERVER['HTTP_X_FORWARDED_PROTO'])
-			&& $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https'
-		) {
-			$scheme = 'https';
-		} else {
-			$scheme = 'http';
+		$url = '';
+		$path = $this->generatePath($name, $params);
+
+		if ($path) {
+			if (isset($_SERVER['HTTP_X_FORWARDED_PROTO'])
+				&& $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https'
+			) {
+				$scheme = 'https';
+			} else {
+				$scheme = 'http';
+			}
+			$url = $scheme . '://' . $_SERVER['HTTP_HOST'] . $path;
 		}
-		return $scheme . '://' . $_SERVER['HTTP_HOST'] . $this->generatePath($name, $params);
+
+		return $url;
 	}
 
 	/**

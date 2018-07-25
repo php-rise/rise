@@ -29,5 +29,9 @@ final class UrlGeneratorTest extends TestCase {
 			'http://www.example.com/products/15',
 			$urlGenerator->generate('product.show', ['id' => '15'])
 		);
+		$this->assertSame(
+			'',
+			$urlGenerator->generate('not.exists')
+		);
 	}
 }
