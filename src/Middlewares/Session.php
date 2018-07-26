@@ -41,23 +41,16 @@ class Session {
 	public function validateCsrf(Closure $next) {
 		switch ($this->request->getMethod()) {
 		case 'POST':
-			$token = $_POST[$this->sessionService->getCsrfTokenFormKey()] ?? null;
-			break;
 		case 'PUT':
-			$token = $this->request->getPutParams()[$this->sessionService->getCsrfTokenFormKey()] ?? null;
-			break;
 		case 'DELETE':
-			$token = $this->request->getDeleteParams()[$this->sessionService->getCsrfTokenFormKey()] ?? null;
 			break;
 		default:
 			$next();
 			return;
 		}
 
-		// Get token from header if it is not found in body.
-		if (!$token) {
-			$token = $this->request->getHeader($this->sessionService->getCsrfTokenHeaderKey());
-		}
+		$token = $this->request->getInput()[$this->sessionService->getCsrfTokenFormKey()]
+			?? $this->request->getHeader($this->sessionService->getCsrfTokenHeaderKey());
 
 		if (!$token || !$this->sessionService->validateCsrfToken($token)) {
 			$response = $this->response;

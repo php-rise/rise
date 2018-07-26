@@ -75,9 +75,6 @@ class Result {
 	 * @return mixed
 	 */
 	public function getParam($key, $defaultValue = null) {
-		if (array_key_exists($key, $this->params)) {
-			return $this->params[$key];
-		}
-		return $defaultValue;
+		return $this->params[$key] ?? $defaultValue;
 	}
 }

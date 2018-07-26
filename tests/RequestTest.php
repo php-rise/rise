@@ -8,15 +8,13 @@ use Rise\Router\Result;
 
 final class RequestTest extends TestCase {
 	public function setUp() {
-		$_SERVER['REQUEST_URI'] = '/products/15?buy=1';
 		$_SERVER['REQUEST_METHOD'] = 'GET';
-		$_SERVER['HTTP_X_REQUESTED_WITH'] = 'XMLHttpRequest';
+		$_SERVER['REQUEST_URI'] = '/products/15?buy=1';
 	}
 
 	public function tearDown() {
-		unset($_SERVER['REQUEST_URI']);
 		unset($_SERVER['REQUEST_METHOD']);
-		unset($_SERVER['HTTP_X_REQUESTED_WITH']);
+		unset($_SERVER['REQUEST_URI']);
 	}
 
 	public function testPath() {
@@ -45,14 +43,17 @@ final class RequestTest extends TestCase {
 	public function testHeader() {
 		$upload = $this->createMock(Upload::class);
 		$result = $this->createMock(Result::class);
+		$_SERVER['HTTP_X_REQUESTED_WITH'] = 'XMLHttpRequest';
 
 		$request = new Request($upload, $result);
 
 		$this->assertSame('XMLHttpRequest', $request->getHeader('X-Requested-With'));
 		$this->assertNull($request->getHeader('X-Some-Thing'));
+
+		unset($_SERVER['HTTP_X_REQUESTED_WITH']);
 	}
 
-	public function testGetParams() {
+	public function testGetQuery() {
 		$upload = $this->createMock(Upload::class);
 		$result = $this->createMock(Result::class);
 		$_GET = [
@@ -61,22 +62,24 @@ final class RequestTest extends TestCase {
 
 		$request = new Request($upload, $result);
 
-		$this->assertSame(['param' => '1'], $request->getGetParams());
+		$this->assertSame(['param' => '1'], $request->getQuery());
 
 		unset($_GET);
 	}
 
-	public function testPostParams() {
+	public function testGetInputForHttpPost() {
 		$upload = $this->createMock(Upload::class);
 		$result = $this->createMock(Result::class);
+		$_SERVER['REQUEST_METHOD'] = 'POST';
 		$_POST = [
 			'param' => '1'
 		];
 
 		$request = new Request($upload, $result);
 
-		$this->assertSame(['param' => '1'], $request->getPostParams());
+		$this->assertSame(['param' => '1'], $request->getInput());
 
+		unset($_SERVER['REQUEST_METHOD']);
 		unset($_POST);
 	}
 

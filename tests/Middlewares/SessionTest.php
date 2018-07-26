@@ -89,7 +89,6 @@ final class SessionTest extends TestCase {
 		$sessionService = $this->createMock(SessionService::class);
 		$request = $this->createMock(Request::class);
 		$response = $this->createMock(Response::class);
-		$_POST['csrf_form_key'] = 'secret_csrf_token';
 
 		$sessionService->expects($this->once())
 			->method('getCsrfTokenFormKey')
@@ -103,6 +102,10 @@ final class SessionTest extends TestCase {
 			->method('getMethod')
 			->willReturn('POST');
 
+		$request->expects($this->atLeastOnce())
+			->method('getInput')
+			->willReturn(['csrf_form_key' => 'secret_csrf_token']);
+
 		$middleware = new SessionMiddleware($sessionService, $request, $response);
 		$executedNext = false;
 		$next = function () use (&$executedNext) {
@@ -111,15 +114,12 @@ final class SessionTest extends TestCase {
 		$middleware->validateCsrf($next);
 
 		$this->assertTrue($executedNext);
-
-		unset($_POST['csrf_form_key']);
 	}
 
 	public function testValidateCsrfCheckHttpPostRequestAndPostParametersWithWrongCsrfToken() {
 		$sessionService = $this->createMock(SessionService::class);
 		$request = $this->createMock(Request::class);
 		$response = $this->createMock(Response::class);
-		$_POST['csrf_form_key'] = 'wrong_csrf_token';
 
 		$sessionService->expects($this->once())
 			->method('getCsrfTokenFormKey')
@@ -133,6 +133,10 @@ final class SessionTest extends TestCase {
 			->method('getMethod')
 			->willReturn('POST');
 
+		$request->expects($this->atLeastOnce())
+			->method('getInput')
+			->willReturn(['csrf_form_key' => 'wrong_csrf_token']);
+
 		$middleware = new SessionMiddleware($sessionService, $request, $response);
 		$executedNext = false;
 		$next = function () use (&$executedNext) {
@@ -141,8 +145,6 @@ final class SessionTest extends TestCase {
 		$middleware->validateCsrf($next);
 
 		$this->assertFalse($executedNext);
-
-		unset($_POST['csrf_form_key']);
 	}
 
 	public function testValidateCsrfCheckHttpPutRequestAndPutParametersWithMatchedCsrfToken() {
@@ -163,7 +165,7 @@ final class SessionTest extends TestCase {
 			->willReturn('PUT');
 
 		$request->expects($this->atLeastOnce())
-			->method('getPutParams')
+			->method('getInput')
 			->willReturn(['csrf_form_key' => 'secret_csrf_token']);
 
 		$middleware = new SessionMiddleware($sessionService, $request, $response);
@@ -194,7 +196,7 @@ final class SessionTest extends TestCase {
 			->willReturn('PUT');
 
 		$request->expects($this->atLeastOnce())
-			->method('getPutParams')
+			->method('getInput')
 			->willReturn(['csrf_form_key' => 'wrong_csrf_token']);
 
 		$middleware = new SessionMiddleware($sessionService, $request, $response);

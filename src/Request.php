@@ -34,18 +34,11 @@ class Request {
 	protected $host;
 
 	/**
-	 * HTTP PUT variables.
+	 * HTTP PUT or DELETE variables.
 	 *
 	 * @var array
 	 */
-	protected $putParams;
-
-	/**
-	 * HTTP DELETE variables.
-	 *
-	 * @var array
-	 */
-	protected $deleteParams;
+	protected $input;
 
 	/**
 	 * @var \Rise\Upload
@@ -164,51 +157,27 @@ class Request {
 	 *
 	 * @return array
 	 */
-	public function getGetParams() {
+	public function getQuery() {
 		return $_GET ?? [];
 	}
 
 	/**
-	 * Return HTTP POST variables.
+	 * Return HTTP POST, PUT or DELETE variables.
 	 *
 	 * @return array
 	 */
-	public function getPostParams() {
-		return $_POST ?? [];
-	}
-
-	/**
-	 * Return HTTP PUT variables.
-	 *
-	 * @return array
-	 */
-	public function getPutParams() {
-		if (!isset($this->putParams)) {
-			if ($this->method === 'PUT') {
-				$this->putParams = $this->getParamsFromInput();
-			} else {
-				$this->putParams = [];
+	public function getInput() {
+		switch ($this->method) {
+		case 'POST':
+			return $_POST ?? [];
+		case 'PUT':
+		case 'DELETE':
+			if (!isset($this->input)) {
+				$this->input = $this->getParamsFromInput();
 			}
+			return $this->input;
 		}
-
-		return $this->putParams;
-	}
-
-	/**
-	 * Return HTTP DELETE variables.
-	 *
-	 * @return array
-	 */
-	public function getDeleteParams() {
-		if (!isset($this->deleteParams)) {
-			if ($this->method === 'DELETE') {
-				$this->deleteParams = $this->getParamsFromInput();
-			} else {
-				$this->deleteParams = [];
-			}
-		}
-
-		return $this->deleteParams;
+		return [];
 	}
 
 	/**
