@@ -1,0 +1,39 @@
+{
+	"name": "php-rise/rise",
+	"description": "PHP Rise Framework",
+	"type": "library",
+	"license": "MIT",
+	"keywords": ["framework"],
+	"homepage": "https://php-rise.github.io",
+	"authors": [
+		{
+			"name": "Jack Wan",
+			"email": "hwguyguy@gmail.com",
+			"role": "Developer"
+		}
+	],
+	"require": {
+		"php": ">=7.0.0"
+	},
+	"require-dev": {
+		"ext-xdebug": "*",
+		"phpunit/phpunit": "^7",
+		"mikey179/vfsStream": "^1"
+	},
+	"autoload": {
+		"psr-4": {
+			"Rise\\": "src/"
+		}
+	},
+	"autoload-dev": {
+		"psr-4": {
+			"Rise\\Test\\": "tests/"
+		},
+		"files": [
+			"tests/functions-override.php"
+		]
+	},
+	"scripts": {
+		"test": "phpunit"
+	}
+}
