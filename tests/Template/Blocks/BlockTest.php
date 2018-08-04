@@ -4,6 +4,7 @@ namespace Rise\Test;
 use PHPUnit\Framework\TestCase;
 use org\bovigo\vfs\vfsStream;
 use Rise\Template\Blocks\Block;
+use Rise\Template\Blocks\NotFoundException;
 use Rise\Template\Blocks\BlockException;
 use Rise\Template;
 use Rise\Path;
@@ -15,102 +16,116 @@ final class BlockTest extends TestCase {
 	private $root;
 
 	public function setUp() {
+		$emptyBlockContent = '';
+
 		$simpleBlockContent = <<<'PHTML'
 Simple block
 PHTML;
 
-		$includeBlockContent = <<<'PHTML'
-<div><?=$this->include('blocks/partials/modal')?></div>
-PHTML;
-
-		$includeParamBlockContent = <<<'PHTML'
-<div><?=$this->include('blocks/partials/modal', ['someKey' => 'Something'])?></div>
-PHTML;
-
-		$extendBlockContent = <<<'PHTML'
-<?php $this->extend('layouts/main') ?>
-Extend block
-PHTML;
-
-		$extendParamBlockContent = <<<'PHTML'
-<?php $this->extend('layouts/main', ['someKey' => 'Something']) ?>
-Extend block
-PHTML;
-
-		$extendNonArrayParamBlockContent = <<<'PHTML'
-<?php $this->extend('layouts/main', 1) ?>
-Extend block
-PHTML;
-
-		$extendParamNameBlockContent = <<<'PHTML'
-<?php $this->extend('layouts/main', [], 'content') ?>
-Extend block
-PHTML;
-
-		$extendEmptyStringParamNameBlockContent = <<<'PHTML'
-<?php $this->extend('layouts/main', [], '') ?>
-Extend block
-PHTML;
-
-		$extendNonStringParamNameBlockContent = <<<'PHTML'
-<?php $this->extend('layouts/main', [], 1) ?>
-Extend block
-PHTML;
+		$layoutBlockContent = '';
 
 		$this->root = vfsStream::setup('root', null, [
 			'templates' => [
 				'blocks' => [
+					'empty.phtml' => $emptyBlockContent,
 					'simple.phtml' => $simpleBlockContent,
-					'include.phtml' => $includeBlockContent,
-					'include-param.phtml' => $includeParamBlockContent,
-					'extend.phtml' => $extendBlockContent,
-					'extend-param.phtml' => $extendParamBlockContent,
-					'extend-non-array-param.phtml' => $extendNonArrayParamBlockContent,
-					'extend-param-name.phtml' => $extendParamNameBlockContent,
-					'extend-empty-string-param-name.phtml' => $extendEmptyStringParamNameBlockContent,
-					'extend-non-string-param-name.phtml' => $extendNonStringParamNameBlockContent,
+					'layout.phtml' => $layoutBlockContent,
 				],
 			]
 		]);
 	}
 
-	public function testSimpleBlock() {
+	public function testSetTemplateAndRender() {
 		$path = $this->createMock(Path::class);
 		$template = $this->createMock(Template::class);
 		$urlGenerator = $this->createMock(UrlGenerator::class);
 		$session = $this->createMock(Session::class);
 		$translation = $this->createMock(Translation::class);
 
-		$path->expects($this->any())
+		$path->expects($this->once())
 			->method('getTemplatesPath')
 			->willReturn(vfsStream::url('root/templates'));
 
 		$block = new Block($path, $template, $urlGenerator, $session, $translation);
-
 		$block->setTemplate('blocks/simple');
-
 		$this->assertSame('Simple block', $block->render());
 	}
 
-	public function testIncludeBlock() {
+	public function testTemplateNotFound() {
+		$this->expectException(NotFoundException::class);
+
 		$path = $this->createMock(Path::class);
 		$template = $this->createMock(Template::class);
 		$urlGenerator = $this->createMock(UrlGenerator::class);
 		$session = $this->createMock(Session::class);
 		$translation = $this->createMock(Translation::class);
 
-		$path->expects($this->any())
+		$path->expects($this->once())
+			->method('getTemplatesPath')
+			->willReturn(vfsStream::url('root/templates'));
+
+		$block = new Block($path, $template, $urlGenerator, $session, $translation);
+		$block->setTemplate('blocks/not.found');
+	}
+
+	public function testInclude() {
+		$path = $this->createMock(Path::class);
+		$template = $this->createMock(Template::class);
+		$urlGenerator = $this->createMock(UrlGenerator::class);
+		$session = $this->createMock(Session::class);
+		$translation = $this->createMock(Translation::class);
+
+		$path->expects($this->atLeastOnce())
 			->method('getTemplatesPath')
 			->willReturn(vfsStream::url('root/templates'));
 
 		$template->expects($this->once())
 			->method('render')
-			->with($this->equalTo('blocks/partials/modal'));
+			->with($this->equalTo(vfsStream::url('root/templates/blocks/simple.phtml')));
 
 		$block = new Block($path, $template, $urlGenerator, $session, $translation);
+		$block->setTemplate('blocks/empty');
+		$block->include('blocks/simple');
+	}
 
-		$block->setTemplate('blocks/include');
-		$block->render();
+	public function testIncludeRelative() {
+		$path = $this->createMock(Path::class);
+		$template = $this->createMock(Template::class);
+		$urlGenerator = $this->createMock(UrlGenerator::class);
+		$session = $this->createMock(Session::class);
+		$translation = $this->createMock(Translation::class);
+
+		$path->expects($this->atLeastOnce())
+			->method('getTemplatesPath')
+			->willReturn(vfsStream::url('root/templates'));
+
+		$template->expects($this->once())
+			->method('render')
+			->with($this->equalTo(vfsStream::url('root/templates/blocks/simple.phtml')));
+
+		$block = new Block($path, $template, $urlGenerator, $session, $translation);
+		$block->setTemplate('blocks/empty');
+		$block->include('./simple');
+	}
+
+	public function testIncludeRelativeParent() {
+		$path = $this->createMock(Path::class);
+		$template = $this->createMock(Template::class);
+		$urlGenerator = $this->createMock(UrlGenerator::class);
+		$session = $this->createMock(Session::class);
+		$translation = $this->createMock(Translation::class);
+
+		$path->expects($this->atLeastOnce())
+			->method('getTemplatesPath')
+			->willReturn(vfsStream::url('root/templates'));
+
+		$template->expects($this->once())
+			->method('render')
+			->with($this->equalTo(vfsStream::url('root/templates/blocks/simple.phtml')));
+
+		$block = new Block($path, $template, $urlGenerator, $session, $translation);
+		$block->setTemplate('blocks/empty');
+		$block->include('../blocks/simple');
 	}
 
 	public function testIncludeParamBlock() {
@@ -120,92 +135,160 @@ PHTML;
 		$session = $this->createMock(Session::class);
 		$translation = $this->createMock(Translation::class);
 
-		$path->expects($this->any())
+		$path->expects($this->atLeastOnce())
 			->method('getTemplatesPath')
 			->willReturn(vfsStream::url('root/templates'));
 
 		$template->expects($this->once())
 			->method('render')
 			->with(
-				$this->equalTo('blocks/partials/modal'),
+				$this->equalTo(vfsStream::url('root/templates/blocks/simple.phtml')),
 				$this->equalTo(['someKey' => 'Something'])
 			);
 
 		$block = new Block($path, $template, $urlGenerator, $session, $translation);
-
-		$block->setTemplate('blocks/include-param');
-		$block->render();
+		$block->setTemplate('blocks/empty');
+		$block->include('blocks/simple', ['someKey' => 'Something']);
 	}
 
-	public function testExendBlock() {
+	public function testIncludeNotFound() {
+		$this->expectException(NotFoundException::class);
+
 		$path = $this->createMock(Path::class);
 		$template = $this->createMock(Template::class);
 		$urlGenerator = $this->createMock(UrlGenerator::class);
 		$session = $this->createMock(Session::class);
 		$translation = $this->createMock(Translation::class);
 
-		$path->expects($this->any())
+		$path->expects($this->atLeastOnce())
 			->method('getTemplatesPath')
 			->willReturn(vfsStream::url('root/templates'));
 
-		$template->expects($this->once())
-			->method('render')
-			->with(
-				$this->equalTo('layouts/main'),
-				$this->equalTo(['body' => 'Extend block'])
-			);
+		$template->expects($this->never())
+			->method('render');
 
 		$block = new Block($path, $template, $urlGenerator, $session, $translation);
-
-		$block->setTemplate('blocks/extend');
-		$block->render();
+		$block->setTemplate('blocks/empty');
+		$block->include('blocks/not.found');
 	}
 
-	public function testExendParamBlock() {
+	public function testExend() {
 		$path = $this->createMock(Path::class);
 		$template = $this->createMock(Template::class);
 		$urlGenerator = $this->createMock(UrlGenerator::class);
 		$session = $this->createMock(Session::class);
 		$translation = $this->createMock(Translation::class);
 
-		$path->expects($this->any())
+		$path->expects($this->atLeastOnce())
 			->method('getTemplatesPath')
 			->willReturn(vfsStream::url('root/templates'));
 
 		$template->expects($this->once())
 			->method('render')
 			->with(
-				$this->equalTo('layouts/main'),
-				$this->equalTo(['body' => 'Extend block', 'someKey' => 'Something'])
+				$this->equalTo(vfsStream::url('root/templates/blocks/layout.phtml')),
+				$this->equalTo(['body' => ''])
 			);
 
 		$block = new Block($path, $template, $urlGenerator, $session, $translation);
-
-		$block->setTemplate('blocks/extend-param');
+		$block->setTemplate('blocks/empty');
+		$block->extend('blocks/layout');
 		$block->render();
 	}
 
-	public function testExendNonArrayParamBlock() {
+	public function testExendRelative() {
 		$path = $this->createMock(Path::class);
 		$template = $this->createMock(Template::class);
 		$urlGenerator = $this->createMock(UrlGenerator::class);
 		$session = $this->createMock(Session::class);
 		$translation = $this->createMock(Translation::class);
 
-		$path->expects($this->any())
+		$path->expects($this->atLeastOnce())
 			->method('getTemplatesPath')
 			->willReturn(vfsStream::url('root/templates'));
 
 		$template->expects($this->once())
 			->method('render')
 			->with(
-				$this->equalTo('layouts/main'),
-				$this->equalTo(['body' => 'Extend block'])
+				$this->equalTo(vfsStream::url('root/templates/blocks/layout.phtml')),
+				$this->equalTo(['body' => ''])
 			);
 
 		$block = new Block($path, $template, $urlGenerator, $session, $translation);
+		$block->setTemplate('blocks/empty');
+		$block->extend('./layout');
+		$block->render();
+	}
 
-		$block->setTemplate('blocks/extend-non-array-param');
+	public function testExendRelativeParent() {
+		$path = $this->createMock(Path::class);
+		$template = $this->createMock(Template::class);
+		$urlGenerator = $this->createMock(UrlGenerator::class);
+		$session = $this->createMock(Session::class);
+		$translation = $this->createMock(Translation::class);
+
+		$path->expects($this->atLeastOnce())
+			->method('getTemplatesPath')
+			->willReturn(vfsStream::url('root/templates'));
+
+		$template->expects($this->once())
+			->method('render')
+			->with(
+				$this->equalTo(vfsStream::url('root/templates/blocks/layout.phtml')),
+				$this->equalTo(['body' => ''])
+			);
+
+		$block = new Block($path, $template, $urlGenerator, $session, $translation);
+		$block->setTemplate('blocks/empty');
+		$block->extend('../blocks/layout');
+		$block->render();
+	}
+
+	public function testExendParam() {
+		$path = $this->createMock(Path::class);
+		$template = $this->createMock(Template::class);
+		$urlGenerator = $this->createMock(UrlGenerator::class);
+		$session = $this->createMock(Session::class);
+		$translation = $this->createMock(Translation::class);
+
+		$path->expects($this->atLeastOnce())
+			->method('getTemplatesPath')
+			->willReturn(vfsStream::url('root/templates'));
+
+		$template->expects($this->once())
+			->method('render')
+			->with(
+				$this->equalTo(vfsStream::url('root/templates/blocks/layout.phtml')),
+				$this->equalTo(['body' => '', 'someKey' => 'Something'])
+			);
+
+		$block = new Block($path, $template, $urlGenerator, $session, $translation);
+		$block->setTemplate('blocks/empty');
+		$block->extend('blocks/layout', ['someKey' => 'Something']);
+		$block->render();
+	}
+
+	public function testExendNonArrayParam() {
+		$path = $this->createMock(Path::class);
+		$template = $this->createMock(Template::class);
+		$urlGenerator = $this->createMock(UrlGenerator::class);
+		$session = $this->createMock(Session::class);
+		$translation = $this->createMock(Translation::class);
+
+		$path->expects($this->atLeastOnce())
+			->method('getTemplatesPath')
+			->willReturn(vfsStream::url('root/templates'));
+
+		$template->expects($this->once())
+			->method('render')
+			->with(
+				$this->equalTo(vfsStream::url('root/templates/blocks/layout.phtml')),
+				$this->equalTo(['body' => ''])
+			);
+
+		$block = new Block($path, $template, $urlGenerator, $session, $translation);
+		$block->setTemplate('blocks/empty');
+		$block->extend('blocks/layout', 1);
 		$block->render();
 	}
 
@@ -216,20 +299,20 @@ PHTML;
 		$session = $this->createMock(Session::class);
 		$translation = $this->createMock(Translation::class);
 
-		$path->expects($this->any())
+		$path->expects($this->atLeastOnce())
 			->method('getTemplatesPath')
 			->willReturn(vfsStream::url('root/templates'));
 
 		$template->expects($this->once())
 			->method('render')
 			->with(
-				$this->equalTo('layouts/main'),
-				$this->equalTo(['content' => 'Extend block'])
+				$this->equalTo(vfsStream::url('root/templates/blocks/layout.phtml')),
+				$this->equalTo(['content' => ''])
 			);
 
 		$block = new Block($path, $template, $urlGenerator, $session, $translation);
-
-		$block->setTemplate('blocks/extend-param-name');
+		$block->setTemplate('blocks/empty');
+		$block->extend('blocks/layout', [], 'content');
 		$block->render();
 	}
 
@@ -240,20 +323,20 @@ PHTML;
 		$session = $this->createMock(Session::class);
 		$translation = $this->createMock(Translation::class);
 
-		$path->expects($this->any())
+		$path->expects($this->atLeastOnce())
 			->method('getTemplatesPath')
 			->willReturn(vfsStream::url('root/templates'));
 
 		$template->expects($this->once())
 			->method('render')
 			->with(
-				$this->equalTo('layouts/main'),
-				$this->equalTo(['body' => 'Extend block'])
+				$this->equalTo(vfsStream::url('root/templates/blocks/layout.phtml')),
+				$this->equalTo(['body' => ''])
 			);
 
 		$block = new Block($path, $template, $urlGenerator, $session, $translation);
-
-		$block->setTemplate('blocks/extend-empty-string-param-name');
+		$block->setTemplate('blocks/empty');
+		$block->extend('blocks/layout', [], '');
 		$block->render();
 	}
 
@@ -264,25 +347,25 @@ PHTML;
 		$session = $this->createMock(Session::class);
 		$translation = $this->createMock(Translation::class);
 
-		$path->expects($this->any())
+		$path->expects($this->atLeastOnce())
 			->method('getTemplatesPath')
 			->willReturn(vfsStream::url('root/templates'));
 
 		$template->expects($this->once())
 			->method('render')
 			->with(
-				$this->equalTo('layouts/main'),
-				$this->equalTo(['body' => 'Extend block'])
+				$this->equalTo(vfsStream::url('root/templates/blocks/layout.phtml')),
+				$this->equalTo(['body' => ''])
 			);
 
 		$block = new Block($path, $template, $urlGenerator, $session, $translation);
-
-		$block->setTemplate('blocks/extend-non-string-param-name');
+		$block->setTemplate('blocks/empty');
+		$block->extend('blocks/layout', [], 1);
 		$block->render();
 	}
 
-	public function testNotExistBlock() {
-		$this->expectException(BlockException::class);
+	public function testExendNotFound() {
+		$this->expectException(NotFoundException::class);
 
 		$path = $this->createMock(Path::class);
 		$template = $this->createMock(Template::class);
@@ -290,13 +373,16 @@ PHTML;
 		$session = $this->createMock(Session::class);
 		$translation = $this->createMock(Translation::class);
 
-		$path->expects($this->any())
+		$path->expects($this->atLeastOnce())
 			->method('getTemplatesPath')
 			->willReturn(vfsStream::url('root/templates'));
 
+		$template->expects($this->never())
+			->method('render');
+
 		$block = new Block($path, $template, $urlGenerator, $session, $translation);
-		$block->setTemplate('not/exist/template');
-		$block->render();
+		$block->setTemplate('blocks/empty');
+		$block->extend('blocks/not.found');
 	}
 
 	public function testUrlHelper() {
