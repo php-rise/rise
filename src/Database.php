@@ -87,12 +87,8 @@ class Database {
 			return null;
 		}
 
-		$pdoArgs = [$config['dsn'], $config['username']];
+		$pdoArgs = [$config['dsn'], $config['username'], $config['password']];
 		$options = [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION];
-
-		if (isset($config['password'])) {
-			$pdoArgs[] = $config['password'];
-		}
 
 		if (isset($config['options'])) {
 			$options = $config['options'] + $options;
