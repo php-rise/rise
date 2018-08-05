@@ -360,6 +360,39 @@ final class ScopeTest extends TestCase {
 		});
 	}
 
+	public function testCallPrefixAgainInSameScope() {
+		$request = $this->createMock(Request::class);
+		$result = $this->createMock(Result::class);
+		$urlGenerator = $this->createMock(UrlGenerator::class);
+
+		$request->expects($this->any())
+			->method('isMethod')
+			->willReturn(true);
+
+		$request->expects($this->atLeastOnce())
+			->method('getPath')
+			->willReturn('/products/1');
+
+		$result->expects($this->once())
+			->method('setHandler')
+			->with($this->equalTo(['ProductHandler.handle']));
+
+		$result->expects($this->once())
+			->method('setStatus')
+			->with($this->equalTo(200));
+
+		$result->expects($this->once())
+			->method('setParams')
+			->with($this->equalTo(['pid' => '1']));
+
+		$scope = new Scope($request, $result, $urlGenerator);
+
+		$scope->prefix('/blogs');
+		$scope->on('GET', '/{bid}', 'BlogHandler.handle');
+		$scope->prefix('/products');
+		$scope->on('GET', '/{pid}', 'ProductHandler.handle');
+	}
+
 	public function testNotMatchRoute() {
 		$request = $this->createMock(Request::class);
 		$result = $this->createMock(Result::class);
@@ -462,23 +495,6 @@ final class ScopeTest extends TestCase {
 		$scope->createScope(function ($scope) {
 			$scope->on('GET', '/comments/{cid}', 'Handler.handle');
 		});
-	}
-
-	public function testDuplicateCallPrefixError() {
-		$request = $this->createMock(Request::class);
-		$result = $this->createMock(Result::class);
-		$urlGenerator = $this->createMock(UrlGenerator::class);
-
-		$request->expects($this->once())
-			->method('getPath')
-			->willReturn('/products/1/comments/2');
-
-		$this->expectException(Exception::class);
-
-		$scope = new Scope($request, $result, $urlGenerator);
-
-		$scope->prefix('/products');
-		$scope->prefix('/{id}');
 	}
 
 	public function testNamedRoute() {
