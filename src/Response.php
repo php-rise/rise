@@ -328,10 +328,11 @@ Redirecting to <a href="%1$s">%1$s</a>', htmlspecialchars($url, ENT_QUOTES, 'UTF
 	 *
 	 * @param string $routeName
 	 * @param array $params
+	 * @param bool $permanent Optional
 	 * @return self
 	 */
-	public function redirectRoute($name = '', $params = []) {
-		$this->redirect($this->urlGenerator->generate($name, $params));
+	public function redirectRoute($name, $params = [], $permanent = false) {
+		$this->redirect($this->urlGenerator->generate($name, $params), $permanent);
 		return $this;
 	}
 
