@@ -205,7 +205,7 @@ HTML;
 	/**
 	 * @runInSeparateProcess
 	 */
-	public function testRedirectPermanent() {
+	public function testRedirectStatus() {
 		$request = $this->createMock(Request::class);
 		$urlGenerator = $this->createMock(UrlGenerator::class);
 
@@ -222,7 +222,7 @@ Redirecting to <a href="http://www.example.com">http://www.example.com</a>
 HTML;
 
 		$response = new Response($request, $urlGenerator);
-		$response->redirect('http://www.example.com', true);
+		$response->redirect('http://www.example.com', 301);
 		$response->send();
 
 		$outputHeaders = xdebug_get_headers();
@@ -273,7 +273,7 @@ HTML;
 	/**
 	 * @runInSeparateProcess
 	 */
-	public function testRedirectPermanentNamedRoute() {
+	public function testRedirectNamedRouteStatus() {
 		$request = $this->createMock(Request::class);
 		$urlGenerator = $this->createMock(UrlGenerator::class);
 
@@ -294,7 +294,7 @@ Redirecting to <a href="http://www.example.com/products/15">http://www.example.c
 HTML;
 
 		$response = new Response($request, $urlGenerator);
-		$response->redirectRoute('products.show', ['id' => 15], true);
+		$response->redirectRoute('products.show', ['id' => 15], 301);
 		$response->send();
 
 		$outputHeaders = xdebug_get_headers();

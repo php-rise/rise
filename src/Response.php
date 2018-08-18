@@ -307,11 +307,10 @@ class Response {
 	 * Setup HTTP redirect.
 	 *
 	 * @param string $url
-	 * @param bool $permanent optional
+	 * @param int $statusCode Optional
 	 * @return self
 	 */
-	public function redirect($url, $permanent = false) {
-		$statusCode = $permanent ? 301 : 302;
+	public function redirect($url, $statusCode = 302) {
 		$this->setStatusCode($statusCode)
 			->setHeader('Location', $url)
 			->setBody(sprintf('<!DOCTYPE html>
@@ -328,11 +327,11 @@ Redirecting to <a href="%1$s">%1$s</a>', htmlspecialchars($url, ENT_QUOTES, 'UTF
 	 *
 	 * @param string $routeName
 	 * @param array $params
-	 * @param bool $permanent Optional
+	 * @param int $statusCode Optional
 	 * @return self
 	 */
-	public function redirectRoute($name, $params = [], $permanent = false) {
-		$this->redirect($this->urlGenerator->generate($name, $params), $permanent);
+	public function redirectRoute($name, $params = [], $statusCode = 302) {
+		$this->redirect($this->urlGenerator->generate($name, $params), $statusCode);
 		return $this;
 	}
 
