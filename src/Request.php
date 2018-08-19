@@ -34,7 +34,21 @@ class Request {
 	protected $host;
 
 	/**
-	 * HTTP PUT or DELETE variables.
+	 * Content type.
+	 *
+	 * @var string
+	 */
+	protected $contentType;
+
+	/**
+	 * Charset.
+	 *
+	 * @var string
+	 */
+	protected $charset;
+
+	/**
+	 * HTTP POST, PUT or DELETE variables.
 	 *
 	 * @var array
 	 */
@@ -153,6 +167,40 @@ class Request {
 	}
 
 	/**
+	 * Get content type.
+	 *
+	 * @return string
+	 */
+	public function getContentType() {
+		if (!isset($this->contentType)) {
+			$numOfMatches = preg_match('/^([^;]*)/', $this->getHeader('Content-Type'), $matches);
+			if ($numOfMatches) {
+				$this->contentType = trim($matches[1]);
+			} else {
+				$this->contentType = '';
+			}
+		}
+		return $this->contentType;
+	}
+
+	/**
+	 * Get charset.
+	 *
+	 * @return string
+	 */
+	public function getCharset() {
+		if (!isset($this->charset)) {
+			$numOfMatches = preg_match('/charset\s*=([^;]*)/', $this->getHeader('Content-Type'), $matches);
+			if ($numOfMatches) {
+				$this->charset = trim($matches[1]);
+			} else {
+				$this->charset = '';
+			}
+		}
+		return $this->charset;
+	}
+
+	/**
 	 * Return HTTP GET variables.
 	 *
 	 * @return array
@@ -167,17 +215,33 @@ class Request {
 	 * @return array
 	 */
 	public function getInput() {
-		switch ($this->method) {
-		case 'POST':
-			return $_POST ?? [];
-		case 'PUT':
-		case 'DELETE':
-			if (!isset($this->input)) {
+		if (!isset($this->input)) {
+			switch ($this->method) {
+			case 'POST':
+				switch ($this->getContentType()) {
+				case 'application/x-www-form-urlencoded':
+				case 'multipart/form-data':
+					$this->input = $_POST;
+					break;
+
+				default:
+					$this->input = $this->getParamsFromInput();
+					break;
+				}
+				break;
+
+			case 'PUT':
+			case 'DELETE':
 				$this->input = $this->getParamsFromInput();
+				break;
+
+			default:
+				$this->input = [];
+				break;
 			}
-			return $this->input;
 		}
-		return [];
+
+		return $this->input;
 	}
 
 	/**
@@ -213,12 +277,19 @@ class Request {
 	 * @return array
 	 */
 	private function getParamsFromInput() {
-		$numOfMatches = preg_match('/boundary=(.*)$/', $this->getHeader('Content-Type'), $matches);
-		if (!$numOfMatches) {
+		switch ($this->getContentType()) {
+		case 'application/x-www-form-urlencoded':
 			parse_str(file_get_contents('php://input'), $params);
-		} else {
+			break;
+
+		case 'application/json':
+			$params = json_decode(file_get_contents('php://input'), true);
+			break;
+
+		default:
 			$params = [];
 		}
+
 		return $params;
 	}
 }
