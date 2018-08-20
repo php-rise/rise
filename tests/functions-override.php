@@ -27,3 +27,32 @@ function move_uploaded_file($from, $to) {
 }
 
 }
+
+namespace Rise\Template\Blocks {
+
+function realpath($path) {
+	if (basename($path) === 'not.found.phtml') { // Hard code a "not found" filename
+		return false;
+	}
+
+	$protocol = 'vfs://';
+	$path = substr($path, strlen($protocol));
+	$root = ($path[0] === '/') ? '/' : '';
+	$segments = explode('/', trim($path, '/'));
+	$ret = array();
+
+	foreach($segments as $segment){
+		if (($segment == '.') || strlen($segment) === 0) {
+			continue;
+		}
+		if ($segment == '..') {
+			array_pop($ret);
+		} else {
+			array_push($ret, $segment);
+		}
+	}
+
+	return $protocol . $root . implode('/', $ret);
+}
+
+}

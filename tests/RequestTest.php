@@ -43,14 +43,64 @@ final class RequestTest extends TestCase {
 	public function testHeader() {
 		$upload = $this->createMock(Upload::class);
 		$result = $this->createMock(Result::class);
+
 		$_SERVER['HTTP_X_REQUESTED_WITH'] = 'XMLHttpRequest';
-
 		$request = new Request($upload, $result);
-
 		$this->assertSame('XMLHttpRequest', $request->getHeader('X-Requested-With'));
 		$this->assertNull($request->getHeader('X-Some-Thing'));
 
 		unset($_SERVER['HTTP_X_REQUESTED_WITH']);
+	}
+
+	public function testContentType() {
+		$upload = $this->createMock(Upload::class);
+		$result = $this->createMock(Result::class);
+
+		$_SERVER['CONTENT_TYPE'] = 'application/x-www-form-urlencoded';
+		$request = new Request($upload, $result);
+		$this->assertSame('application/x-www-form-urlencoded', $request->getContentType());
+
+		// Check if value is cached
+		$_SERVER['CONTENT_TYPE'] = 'application/json';
+		$this->assertSame('application/x-www-form-urlencoded', $request->getContentType());
+
+		// Contains charset
+		$_SERVER['CONTENT_TYPE'] = 'application/x-www-form-urlencoded; charset=UTF-8';
+		$request = new Request($upload, $result);
+		$this->assertSame('application/x-www-form-urlencoded', $request->getContentType());
+
+		// Contains whitespaces
+		$_SERVER['CONTENT_TYPE'] = ' application/x-www-form-urlencoded ; charset=UTF-8';
+		$request = new Request($upload, $result);
+		$this->assertSame('application/x-www-form-urlencoded', $request->getContentType());
+
+		// No Content-Type header
+		unset($_SERVER['CONTENT_TYPE']);
+		$request = new Request($upload, $result);
+		$this->assertSame('', $request->getContentType());
+	}
+
+	public function testCharset() {
+		$upload = $this->createMock(Upload::class);
+		$result = $this->createMock(Result::class);
+
+		$_SERVER['CONTENT_TYPE'] = 'application/x-www-form-urlencoded; charset=UTF-8';
+		$request = new Request($upload, $result);
+		$this->assertSame('UTF-8', $request->getCharset());
+
+		// Check if value is cached
+		$_SERVER['CONTENT_TYPE'] = 'application/x-www-form-urlencoded; charset=Big5';
+		$this->assertSame('UTF-8', $request->getCharset());
+
+		// Contains whitespaces
+		$_SERVER['CONTENT_TYPE'] = ' application/x-www-form-urlencoded ; charset = UTF-8  ';
+		$request = new Request($upload, $result);
+		$this->assertSame('UTF-8', $request->getCharset());
+
+		// No Content-Type header
+		unset($_SERVER['CONTENT_TYPE']);
+		$request = new Request($upload, $result);
+		$this->assertSame('', $request->getCharset());
 	}
 
 	public function testGetQuery() {
@@ -67,18 +117,29 @@ final class RequestTest extends TestCase {
 		unset($_GET);
 	}
 
-	public function testGetInputForHttpPost() {
+	public function testGetInput() {
 		$upload = $this->createMock(Upload::class);
 		$result = $this->createMock(Result::class);
+
+		// test POST in application/x-www-form-urlencoded
+		$_SERVER['CONTENT_TYPE'] = 'application/x-www-form-urlencoded';
 		$_SERVER['REQUEST_METHOD'] = 'POST';
 		$_POST = [
 			'param' => '1'
 		];
-
 		$request = new Request($upload, $result);
-
 		$this->assertSame(['param' => '1'], $request->getInput());
 
+		// test POST in multipart/form-data
+		$_SERVER['CONTENT_TYPE'] = 'multipart/form-data';
+		$_SERVER['REQUEST_METHOD'] = 'POST';
+		$_POST = [
+			'param' => '1'
+		];
+		$request = new Request($upload, $result);
+		$this->assertSame(['param' => '1'], $request->getInput());
+
+		unset($_SERVER['CONTENT_TYPE']);
 		unset($_SERVER['REQUEST_METHOD']);
 		unset($_POST);
 	}

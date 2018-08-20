@@ -98,7 +98,7 @@ class Block {
 	 * @return string
 	 */
 	public function include($template, $data = []) {
-		return $this->templateService->render($template, $data);
+		return $this->templateService->render($this->resolveTemplatePath($template), $data);
 	}
 
 	/**
@@ -109,7 +109,7 @@ class Block {
 	 * @param string $paramName Optional. Variable name of the variable storing the content of this block, default to "body".
 	 */
 	public function extend($template, $data = [], $paramName = 'body') {
-		$this->extendedTemplate = $template;
+		$this->extendedTemplate = $this->resolveTemplatePath($template);
 		if (is_array($data)) {
 			$this->extendedData = $data;
 		}
@@ -198,8 +198,8 @@ class Block {
 	 *
 	 * @param string $template
 	 */
-	public function setTemplate($template = '') {
-		$this->template = $template;
+	public function setTemplate($template) {
+		$this->template = $this->resolveTemplatePath($template);
 	}
 
 	/**
@@ -214,6 +214,31 @@ class Block {
 	}
 
 	/**
+	 * Resolve template path.
+	 *
+	 * @param string $path
+	 * @return string
+	 */
+	protected function resolveTemplatePath($path) {
+		switch ($path[0]) {
+		case '/':
+			break;
+		case '.':
+			$path = realpath(dirname($this->template) . '/' . $path . '.phtml');
+			break;
+		default:
+			$path = realpath($this->pathService->getTemplatesPath() . '/' . $path . '.phtml');
+			break;
+		}
+
+		if ($path === false) {
+			throw new NotFoundException($this->template . ' file not found');
+		}
+
+		return $path;
+	}
+
+	/**
 	 * Render this block to HTML string.
 	 *
 	 * @return string
@@ -222,7 +247,7 @@ class Block {
 		extract($this->data, EXTR_SKIP);
 		ob_start();
 		set_error_handler([$this, 'handleError']);
-		include $this->pathService->getTemplatesPath() . '/' . $this->template . '.phtml';
+		include $this->template;
 		restore_error_handler();
 		$html = ob_get_clean();
 		return $html;

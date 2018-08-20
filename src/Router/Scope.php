@@ -8,16 +8,28 @@ class Scope {
 	const ROUTE_PARAM_PATTERN = '/(\\{(.*?)\\})/';
 
 	/**
-	 * URL path prefix.
+	 * URL path prefix, include parent.
 	 * @var string
 	 */
 	protected $prefix = '';
+
+	/**
+	 * For resetting the value of $prefix.
+	 * @var string
+	 */
+	protected $parentPrefix = '';
 
 	/**
 	 * Indicates if the prefix is matched with the request path.
 	 * @var bool
 	 */
 	protected $prefixMatched = true;
+
+	/**
+	 * For resetting the value of $prefixMatched.
+	 * @var bool
+	 */
+	protected $parentPrefixMatched = true;
 
 	/**
 	 * Namespace of all handlers in the scope and child scopes.
@@ -37,19 +49,15 @@ class Scope {
 	protected $requestPathOffset = 0;
 
 	/**
+	 * For resetting the value of $requestPathOffset.
+	 * @var int
+	 */
+	protected $parentRequestPathOffset = 0;
+
+	/**
 	 * @var array
 	 */
 	protected $params = [];
-
-	/**
-	 * @var bool
-	 */
-	protected $hasCalledPrefix = false;
-
-	/**
-	 * @var bool
-	 */
-	protected $hasCalledOn = false;
 
 	/**
 	 * @var \Rise\Request
@@ -97,15 +105,12 @@ class Scope {
 	 * @return self
 	 */
 	public function prefix($prefix) {
-		if ($this->hasCalledPrefix) {
-			throw new Exception(get_class($this) . '::prefix() should be called only once.');
+		// Reset values before matching.
+		$this->prefix = $this->parentPrefix;
+		$this->requestPathOffset = $this->parentRequestPathOffset;
+		if ($this->parentPrefixMatched) {
+			$this->prefixMatched = $this->parentPrefixMatched;
 		}
-
-		if ($this->hasCalledOn) {
-			throw new Exception(get_class($this) . '::prefix() should be called before ' . get_class($this) . '::on().');
-		}
-
-		$this->hasCalledPrefix = true;
 
 		if (!$this->result->hasHandler() && $this->prefixMatched) {
 			$this->prefixMatched = $this->matchPartial($prefix);
@@ -161,8 +166,6 @@ class Scope {
 	 * @return self
 	 */
 	public function on($method, $path, $handler, $name = '') {
-		$this->hasCalledOn = true;
-
 		if (!$this->result->hasHandler()
 			&& $this->prefixMatched
 			&& $this->request->isMethod($method)
@@ -241,12 +244,17 @@ class Scope {
 	 */
 	public function setupParent($prefix, $prefixMatched, $requestPathOffset, $params) {
 		$this->prefix = $prefix;
+		$this->parentPrefix = $prefix;
 		$this->prefixMatched = $prefixMatched;
+		$this->parentPrefixMatched = $prefixMatched;
 		$this->requestPathOffset = $requestPathOffset;
+		$this->parentRequestPathOffset = $requestPathOffset;
 		$this->params = $params;
 	}
 
 	/**
+	 * Match path partial with request path. This will move the request path offset.
+	 *
 	 * @param string $routePathPartial,
 	 * @param bool $toEnd
 	 * @return bool

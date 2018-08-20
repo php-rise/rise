@@ -195,6 +195,39 @@ HTML;
 
 		$outputHeaders = xdebug_get_headers();
 
+		$this->assertSame(302, http_response_code());
+		foreach ($expectedHeaders as $expected) {
+			$this->assertContains($expected, $outputHeaders);
+		}
+		$this->expectOutputString($expectedBody);
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 */
+	public function testRedirectStatus() {
+		$request = $this->createMock(Request::class);
+		$urlGenerator = $this->createMock(UrlGenerator::class);
+
+		$expectedHeaders = [
+			'Location: http://www.example.com',
+		];
+
+		$expectedBody = <<<HTML
+<!DOCTYPE html>
+<meta charset="UTF-8">
+<meta http-equiv="refresh" content="1;url=http://www.example.com">
+<title>Redirecting to http://www.example.com</title>
+Redirecting to <a href="http://www.example.com">http://www.example.com</a>
+HTML;
+
+		$response = new Response($request, $urlGenerator);
+		$response->redirect('http://www.example.com', 301);
+		$response->send();
+
+		$outputHeaders = xdebug_get_headers();
+
+		$this->assertSame(301, http_response_code());
 		foreach ($expectedHeaders as $expected) {
 			$this->assertContains($expected, $outputHeaders);
 		}
@@ -230,6 +263,43 @@ HTML;
 
 		$outputHeaders = xdebug_get_headers();
 
+		$this->assertSame(302, http_response_code());
+		foreach ($expectedHeaders as $expected) {
+			$this->assertContains($expected, $outputHeaders);
+		}
+		$this->expectOutputString($expectedBody);
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 */
+	public function testRedirectNamedRouteStatus() {
+		$request = $this->createMock(Request::class);
+		$urlGenerator = $this->createMock(UrlGenerator::class);
+
+		$urlGenerator->expects($this->once())
+			->method('generate')
+			->willReturn('http://www.example.com/products/15');
+
+		$expectedHeaders = [
+			'Location: http://www.example.com/products/15',
+		];
+
+		$expectedBody = <<<HTML
+<!DOCTYPE html>
+<meta charset="UTF-8">
+<meta http-equiv="refresh" content="1;url=http://www.example.com/products/15">
+<title>Redirecting to http://www.example.com/products/15</title>
+Redirecting to <a href="http://www.example.com/products/15">http://www.example.com/products/15</a>
+HTML;
+
+		$response = new Response($request, $urlGenerator);
+		$response->redirectRoute('products.show', ['id' => 15], 301);
+		$response->send();
+
+		$outputHeaders = xdebug_get_headers();
+
+		$this->assertSame(301, http_response_code());
 		foreach ($expectedHeaders as $expected) {
 			$this->assertContains($expected, $outputHeaders);
 		}
