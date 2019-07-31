@@ -3,6 +3,7 @@ namespace Rise;
 
 use Rise\Router\ScopeFactory;
 use Rise\Router\Result;
+use Rise\Router\RouteNotFoundException;
 
 class Router {
 	/**
@@ -11,23 +12,6 @@ class Router {
 	 * @var string
 	 */
 	protected $routesFile;
-
-	/**
-	 * @var string
-	 */
-	protected $notFoundHandler;
-
-	/**
-	 * @var mixed
-	 */
-	protected $matchedHandler;
-
-	/**
-	 * HTTP status code
-	 *
-	 * @var int
-	 */
-	protected $matchedStatus;
 
 	/**
 	 * @var \Rise\Router\ScopeFactory
@@ -70,35 +54,14 @@ class Router {
 	/**
 	 * Match current HTTP request.
 	 *
-	 * @return bool
-	 */
-	public function match() {
-		$result = false;
-
-		$this->matchedStatus = $this->result->getStatus();
-
-		if ($this->result->hasHandler()) {
-			$result = true;
-			$this->matchedHandler = $this->result->getHandler();
-		} else {
-			$this->matchedHandler = $this->notFoundHandler;
-		}
-
-		return $result;
-	}
-
-	/**
 	 * @return mixed
 	 */
-	public function getMatchedHandler() {
-		return $this->matchedHandler;
-	}
+	public function match() {
+		if ($this->result->hasHandler()) {
+			return $this->result->getHandler();
+		}
 
-	/**
-	 * @return int
-	 */
-	public function getMatchedStatus() {
-		return $this->matchedStatus;
+		throw new RouteNotFoundException;
 	}
 
 	/**
@@ -106,10 +69,6 @@ class Router {
 	 */
 	protected function readConfig() {
 		$this->routesFile = $this->path->getConfigPath() . '/' . 'routes.php';
-		$configurations = require($this->path->getConfigPath() . '/router.php');
-		if (isset($configurations['notFoundHandler'])) {
-			$this->notFoundHandler = $configurations['notFoundHandler'];
-		}
 		return $this;
 	}
 }

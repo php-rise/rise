@@ -7,24 +7,13 @@ use Rise\Router;
 use Rise\Router\ScopeFactory;
 use Rise\Router\Scope;
 use Rise\Router\Result;
+use Rise\Router\RouteNotFoundException;
 use Rise\Path;
 
 final class RouterTest extends TestCase {
 	private $root;
 
 	public function setUp() {
-		$routerConfigContent = <<<PHP
-<?php
-/**
- * Configurations of router.
- *
- * "notFoundHandler": Handler for handling not found route.
- */
-return [
-	'notFoundHandler' => 'Errors\\NotFound.showHtml',
-];
-PHP;
-
 		$routesContent = <<<PHP
 <?php
 /**
@@ -40,7 +29,6 @@ PHP;
 
 		$this->root = vfsStream::setup('root', null, [
 			'config' => [
-				'router.php' => $routerConfigContent,
 				'routes.php' => $routesContent,
 			]
 		]);
@@ -81,19 +69,15 @@ PHP;
 			->method('getHandler')
 			->willReturn(['Product.show']);
 
-		$result->expects($this->once())
-			->method('getStatus')
-			->willReturn(200);
-
 		$router = new Router($scopeFactory, $result, $path);
-		$matched = $router->match();
+		$matchedHandlers = $router->match();
 
-		$this->assertTrue($matched);
-		$this->assertSame(200, $router->getMatchedStatus());
-		$this->assertSame(['Product.show'], $router->getMatchedHandler());
+		$this->assertSame(['Product.show'], $matchedHandlers);
 	}
 
 	public function testNotMatch() {
+		$this->expectException(RouteNotFoundException::class);
+
 		$scopeFactory = $this->createMock(ScopeFactory::class);
 		$result = $this->createMock(Result::class);
 		$path = $this->createMock(Path::class);
@@ -106,15 +90,7 @@ PHP;
 			->method('hasHandler')
 			->willReturn(false);
 
-		$result->expects($this->once())
-			->method('getStatus')
-			->willReturn(404);
-
 		$router = new Router($scopeFactory, $result, $path);
-		$matched = $router->match();
-
-		$this->assertFalse($matched);
-		$this->assertSame(404, $router->getMatchedStatus());
-		$this->assertSame('Errors\NotFound.showHtml', $router->getMatchedHandler());
+		$router->match();
 	}
 }

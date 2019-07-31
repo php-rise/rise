@@ -5,16 +5,6 @@ use PHPUnit\Framework\TestCase;
 use Rise\Router\Result;
 
 final class ResultTest extends TestCase {
-	public function testStatusCode() {
-		$result = new Result();
-
-		$this->assertSame(404, $result->getStatus());
-
-		$result->setStatus(200);
-
-		$this->assertSame(200, $result->getStatus());
-	}
-
 	public function testHandler() {
 		$result = new Result();
 

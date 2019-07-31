@@ -3,12 +3,6 @@ namespace Rise\Router;
 
 class Result {
 	/**
-	 * HTTP status code.
-	 * @var int
-	 */
-	protected $status = 404;
-
-	/**
 	 * @var mixed
 	 */
 	protected $handler = null;
@@ -17,20 +11,6 @@ class Result {
 	 * @var array
 	 */
 	protected $params = [];
-
-	/**
-	 * @return mixed
-	 */
-	public function getStatus() {
-		return $this->status;
-	}
-
-	/**
-	 * @param int $status
-	 */
-	public function setStatus($status) {
-		$this->status = $status;
-	}
 
 	/**
 	 * @return bool

@@ -5,6 +5,8 @@ use Rise\Dispatcher\HandlerFactory;
 
 class Dispatcher {
 	/**
+	 * Handlers / middlewares
+	 *
 	 * @var array
 	 */
 	protected $handlers = [];
@@ -14,8 +16,14 @@ class Dispatcher {
 	 */
 	protected $handlerFactory;
 
-	public function __construct(HandlerFactory $handlerFactory) {
+	/**
+	 * @var \Rise\Path
+	 */
+	protected $path;
+
+	public function __construct(HandlerFactory $handlerFactory, Path $path) {
 		$this->handlerFactory = $handlerFactory;
+		$this->path = $path;
 	}
 
 	/**
@@ -42,6 +50,25 @@ class Dispatcher {
 	 */
 	public function setHandlers($handlers) {
 		$this->handlers = (array)$handlers;
+		return $this;
+	}
+
+	/**
+	 * Read configuration file and set handlers.
+	 *
+	 * @return self
+	 */
+	public function readConfig() {
+		$file = $this->path->getConfigPath() . '/dispatcher.php';
+
+		if (file_exists($file)) {
+			$config = require($file);
+
+			if (isset($config['middlewares']) && is_array($config['middlewares'])) {
+				$this->setHandlers($config['middlewares']);
+			}
+		}
+
 		return $this;
 	}
 

@@ -30,14 +30,16 @@ class Application {
 	 * @return self
 	 */
 	public function run() {
-		$router = $this->container->get(Router::class);
 		$dispatcher = $this->container->get(Dispatcher::class);
-		$response = $this->container->get(Response::class);
 
-		$router->buildRoutes()->match();
-		$response->setStatusCode($router->getMatchedStatus());
-		$dispatcher->setHandlers($router->getMatchedHandler())->dispatch();
-		$response->send()->end();
+		// Set default middlewares
+		$dispatcher->setHandlers([
+			'Rise\Middlewares\Response.run',
+			'Rise\Middlewares\Router.run',
+		]);
+
+		// Dispatch
+		$dispatcher->readConfig()->dispatch();
 
 		return $this;
 	}
