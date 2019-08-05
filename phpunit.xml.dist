@@ -1,0 +1,13 @@
+<phpunit bootstrap="vendor/autoload.php">
+	<php>
+		<env name="DB_DSN" value="mysql:unix_socket=/var/run/mysqld/mysqld.sock;charset=utf8"/>
+		<env name="DB_USERNAME" value="root"/>
+		<env name="DB_PASSWORD" value=""/>
+	</php>
+
+	<testsuites>
+		<testsuite name="test">
+			<directory>tests</directory>
+		</testsuite>
+	</testsuites>
+</phpunit>

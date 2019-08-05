@@ -35,9 +35,9 @@ return [
 
 	'connections' => [
 		'test' => [
-			'dsn' => 'mysql:unix_socket=/var/run/mysqld/mysqld.sock;charset=utf8',
-			'username' => 'root',
-			'password' => '',
+			'dsn' => \$_ENV['DB_DSN'],
+			'username' => \$_ENV['DB_USERNAME'],
+			'password' => \$_ENV['DB_PASSWORD'],
 		],
 
 		'another' => [
@@ -71,9 +71,9 @@ PHP;
 
 		$this->assertSame(
 			[
-				'dsn' => 'mysql:unix_socket=/var/run/mysqld/mysqld.sock;charset=utf8',
-				'username' => 'root',
-				'password' => '',
+				'dsn' => $_ENV['DB_DSN'],
+				'username' => $_ENV['DB_USERNAME'],
+				'password' => $_ENV['DB_PASSWORD'],
 			],
 			$db->getConnectionConfig()
 		);
